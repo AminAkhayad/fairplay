@@ -186,6 +186,7 @@ h1{font-family:var(--body);font-weight:700;font-size:28px;line-height:1.15;lette
 @keyframes fall{to{transform:translateY(105vh) rotate(720deg)}}
 
 .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 92px);transform:translateX(-50%);background:var(--text);color:var(--bg);font-weight:600;font-size:14px;padding:10px 16px;border-radius:999px;z-index:80;animation:up .2s;white-space:nowrap}
+.toast.error{background:var(--danger);color:#fff;white-space:normal;width:max-content;max-width:calc(100vw - 32px);border-radius:14px;text-align:center;line-height:1.35;cursor:pointer}
 
 .players-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:6px}
 .players-grid div{text-align:center;font-size:12px;color:var(--muted);min-width:0}
@@ -326,10 +327,12 @@ function readImg(file, size=240){
   });
 }
 let toastT;
-function toast(msg){
+function toast(msg, isError){
   document.querySelector('.toast')?.remove(); clearTimeout(toastT);
-  const t = document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t);
-  toastT = setTimeout(()=>t.remove(), 2800);
+  const t = document.createElement('div'); t.className = 'toast' + (isError ? ' error' : ''); t.textContent = msg;
+  t.onclick = () => t.remove();
+  document.body.appendChild(t);
+  toastT = setTimeout(()=>t.remove(), isError ? 9000 : 2800);
 }
 let busyN = 0;
 function busy(on){
@@ -341,7 +344,7 @@ function busy(on){
 async function run(fn){
   busy(true);
   try{ return await fn() }
-  catch(e){ console.error(e); toast(niceErr(e)) }
+  catch(e){ console.error(e); toast(niceErr(e), true) }
   finally{ busy(false) }
 }
 
