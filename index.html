@@ -137,6 +137,7 @@ h1{font-family:var(--body);font-weight:700;font-size:28px;line-height:1.15;lette
 .stat b{display:block;font-family:var(--cond);font-size:24px;font-weight:700}
 .stat span{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em}
 .row-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.row-actions{align-items:center}
 .row-actions .btn{margin-top:0}
 .pill{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--surface2);color:var(--muted)}
 .pill.win{background:rgba(198,244,50,.15);color:var(--accent)}
@@ -221,12 +222,24 @@ h1{font-family:var(--body);font-weight:700;font-size:28px;line-height:1.15;lette
   .toast{bottom:32px;left:calc(50% + 124px)}
   .screen.team-edit{max-width:760px}
 }
+.busy{position:fixed;top:0;left:0;right:0;height:3px;z-index:90;background:linear-gradient(90deg,transparent,var(--accent),transparent) no-repeat;background-size:40% 100%;animation:load 1s linear infinite}
+.busy::after{content:"";position:fixed;inset:0}
+@keyframes load{from{background-position:-60% 0}to{background-position:160% 0}}
+.info{color:var(--accent);font-size:14px;margin-top:14px;line-height:1.4}
+.bubble .time{display:block;font-size:10.5px;opacity:.6;margin-top:3px}
+.day .req{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:#FFB84D}
+.day.matched .req{display:none}
+.pill.wait{background:rgba(255,184,77,.15);color:#FFB84D}
+.setup ol{margin:16px 0 0 20px;line-height:1.75;color:var(--muted);font-size:14px}
+.setup code{background:var(--surface2);color:var(--text);padding:2px 6px;border-radius:6px;font-size:13px}
 </style>
 </head>
 <body>
 <div id="app"></div>
 <div id="layer"></div>
 
+<script src="vendor/supabase.js"></script>
+<script src="config.js"></script>
 <script>
 /* ================= icons ================= */
 const I = {
@@ -244,45 +257,39 @@ const I = {
   logout:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg>',
 };
 const star = (on, big) => `<svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" fill="${on?'#C6F432':'none'}" stroke="${on?'#C6F432':'#4C6B5C'}" stroke-width="${big?1.6:2}" stroke-linejoin="round"/></svg>`;
-const stars = r => `<span class="stars">${[1,2,3,4,5].map(i=>star(i<=Math.round(r))).join('')}</span>`;
+const stars = r => `<span class="stars">${[1,2,3,4,5].map(i=>star(i<=Math.round(r||0))).join('')}</span>`;
 
-/* ================= static data ================= */
+/* ================= provinces ================= */
 const PROVINCES = [
-  {id:'oost-vlaanderen', name:'Oost-Vlaanderen', pts:'20,30 170,20 190,90 150,180 30,170 10,80',
-   teams:['FC Gentse Leeuwen','Aalst United','Futsal Dendermonde','Eeklo Strikers','Ronse Rovers','Lokeren Stars']},
-  {id:'west-vlaanderen', name:'West-Vlaanderen', pts:'20,40 150,20 180,90 150,180 40,170 10,100',
-   teams:['Brugge Blue Boys','Kortrijk Kickers','Oostende Waves','Roeselare FC','Ieper Eagles','Torhout Titans']},
-  {id:'vlaams-brabant', name:'Vlaams-Brabant', pts:'30,40 170,30 180,120 120,180 20,150',
-   teams:['Leuven Lions','Vilvoorde Vipers','Halle City','Tienen Turbo','Aarschot Arrows','Zaventem Jets']},
-  {id:'antwerpen', name:'Antwerpen', pts:'20,20 180,30 170,170 40,180 10,90',
-   teams:['Antwerp Diamonds','Mechelen Mavericks','Turnhout Tigers','Mol Meteors','Lier Legends','Boom Bulls']},
-  {id:'limburg', name:'Limburg', pts:'40,20 170,40 190,120 150,190 30,170 20,70',
-   teams:['Hasselt Hawks','Genk Miners','Tongeren Titans','Sint-Truiden Sparks','Bree Bandits','Maasmechelen FC']},
+  {id:'oost-vlaanderen', name:'Oost-Vlaanderen', pts:'20,30 170,20 190,90 150,180 30,170 10,80'},
+  {id:'west-vlaanderen', name:'West-Vlaanderen', pts:'20,40 150,20 180,90 150,180 40,170 10,100'},
+  {id:'vlaams-brabant',  name:'Vlaams-Brabant',  pts:'30,40 170,30 180,120 120,180 20,150'},
+  {id:'antwerpen',       name:'Antwerpen',       pts:'20,20 180,30 170,170 40,180 10,90'},
+  {id:'limburg',         name:'Limburg',         pts:'40,20 170,40 190,120 150,190 30,170 20,70'},
 ];
 const provIcon = p => `<svg class="pi" viewBox="0 0 200 200"><polygon points="${p.pts}" fill="rgba(198,244,50,.14)" stroke="#C6F432" stroke-width="12" stroke-linejoin="round"/></svg>`;
-const prov = id => PROVINCES.find(p => p.id === id);
-const FIRST = ['Yassin','Lucas','Mehdi','Arne','Noah','Bilal','Jonas','Sami','Wout','Ilias','Milan','Rayan','Senne','Adam','Kobe','Anas'];
-const LAST  = ['Peeters','El Amrani','Janssens','Maes','Bouzid','Claes','Wouters','Aydin','Goossens','Mertens','Benali','De Smet','Vermeulen','Haddad'];
-const COLORS = ['#C6F432','#5EE2A0','#FFB84D','#7CC7FF','#FF8A7A','#C9A8FF'];
-const REPLIES = ['Sounds good to us 👍','Which sporthal do you have in mind?','We can do 20:00 if that works for you.','Great, we\'ll bring the bibs.','Perfect, see you there!','Can we confirm the time tomorrow?'];
+const prov = id => PROVINCES.find(p => p.id === id) || {name:''};
 
-function hash(s){let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
-const _teams = {};
-function fakeTeams(pid){
-  if(_teams[pid]) return _teams[pid];
-  return _teams[pid] = prov(pid).teams.map((name,i)=>{
-    const id = pid+'-'+i, h = hash(id);
-    const players = Array.from({length:8},(_,k)=>({first:FIRST[hash(id+k)%FIRST.length], last:LAST[hash(id+'l'+k)%LAST.length]}));
-    return {id, name, color:COLORS[i%COLORS.length], rating:3.1+(h%19)/10, w:h%9, d:(h>>3)%4, l:(h>>5)%6, players};
-  });
+/* ================= backend ================= */
+const CFG = window.FAIRPLAY_CONFIG || {};
+const configured = !!(CFG.url && CFG.anonKey && !/YOUR-/.test(CFG.url + CFG.anonKey) && window.supabase);
+const sb = configured ? window.supabase.createClient(CFG.url, CFG.anonKey) : null;
+
+async function q(promise){            // unwrap a Supabase response, throw on error
+  const {data, error} = await promise;
+  if(error) throw error;
+  return data;
 }
-
-/* ================= storage ================= */
-const KEY = 'fairplay.v2';
-let db; try{ db = JSON.parse(localStorage.getItem(KEY)) }catch(e){}
-if(!db || !db.users) db = {users:{}, session:null};
-function save(){ try{ localStorage.setItem(KEY, JSON.stringify(db)) }catch(e){ toast('Storage full — use smaller photos') } }
-const me = () => db.session ? db.users[db.session] : null;
+function niceErr(e){
+  const m = (e && (e.message || e.error_description)) || String(e);
+  if(/Invalid login credentials/i.test(m)) return 'Wrong email or password.';
+  if(/Email not confirmed/i.test(m)) return 'Confirm your email first — check your inbox.';
+  if(/already registered/i.test(m)) return 'There is already an account with this email.';
+  if(/teams_unique_name/.test(m)) return 'A team with this name already exists in this province.';
+  if(/Failed to fetch|NetworkError|Load failed/i.test(m)) return 'No connection to the server. Check your internet.';
+  if(/rate limit/i.test(m)) return 'Too many attempts. Wait a minute and try again.';
+  return m;
+}
 
 /* ================= helpers ================= */
 const esc = s => String(s ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -292,30 +299,18 @@ const todayIso = () => iso(new Date());
 const parse = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d) };
 const nice = (s, opts={weekday:'long',day:'numeric',month:'long'}) => parse(s).toLocaleDateString('en-GB', opts);
 const short = s => nice(s,{weekday:'short',day:'numeric',month:'short'});
-const initials = n => n.split(/\s+/).filter(w=>/[A-Za-z]/.test(w[0])).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+const clock = ts => new Date(ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+const initials = n => String(n||'?').split(/\s+/).filter(w=>w && /[\p{L}\d]/u.test(w[0])).slice(0,2).map(w=>w[0]).join('').toUpperCase() || '?';
 
-function myTeam(){ const u = me(); return {id:'me', name:u.team.name, logo:u.team.logo, players:u.team.players, color:'#C6F432', mine:true} }
-function teamById(id){ return id==='me' ? myTeam() : fakeTeams(me().province).find(t=>t.id===id) || Object.values(_teams).flat().find(t=>t.id===id) }
 function logo(t, size=40){
-  const fs = Math.round(size*.38);
-  return t.logo ? `<span class="logo" style="width:${size}px;height:${size}px"><img src="${t.logo}" alt=""></span>`
-                : `<span class="logo" style="width:${size}px;height:${size}px;font-size:${fs}px;background:${t.color}">${esc(initials(t.name))}</span>`;
+  if(!t) t = {name:'?'};
+  return t.logo_url ? `<span class="logo" style="width:${size}px;height:${size}px"><img src="${esc(t.logo_url)}" alt="" loading="lazy"></span>`
+                    : `<span class="logo" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.38)}px">${esc(initials(t.name))}</span>`;
 }
 function avatar(p, size=44){
-  return p.photo ? `<span class="logo" style="width:${size}px;height:${size}px"><img src="${p.photo}" alt=""></span>`
-                 : `<span class="logo" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.36)}px;background:var(--surface2);color:var(--muted)">${esc(initials(p.first+' '+p.last))}</span>`;
+  return p.photo_url ? `<span class="logo" style="width:${size}px;height:${size}px"><img src="${esc(p.photo_url)}" alt="" loading="lazy"></span>`
+                     : `<span class="logo" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.36)}px;background:var(--surface2);color:var(--muted)">${esc(initials(p.first_name+' '+p.last_name))}</span>`;
 }
-function available(t, date){ return date >= todayIso() && hash(t.id+date) % 100 < 38 }
-function activeMatch(date){ return me().matches.find(m => m.date===date && m.status==='scheduled') }
-function teamsOn(date){ return fakeTeams(me().province).filter(t => available(t,date)) }
-function myStats(){
-  const u = me(), played = u.matches.filter(m=>m.status==='played');
-  const w = played.filter(m=>m.my>m.their).length, d = played.filter(m=>m.my===m.their).length;
-  const r = u.ratings.length ? u.ratings.reduce((a,b)=>a+b,0)/u.ratings.length : 0;
-  return {w, d, l:played.length-w-d, played:played.length, rating:r};
-}
-function unread(){ const u=me(); return u ? Object.values(u.chats).some(c=>c.unread) : false }
-
 function readImg(file, size=240){
   return new Promise((res,rej)=>{
     const fr = new FileReader();
@@ -324,7 +319,7 @@ function readImg(file, size=240){
       const c = document.createElement('canvas'), s = Math.min(img.width,img.height);
       c.width = c.height = size;
       c.getContext('2d').drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,size,size);
-      res(c.toDataURL('image/jpeg',.82));
+      res(c.toDataURL('image/jpeg',.85));
     }; img.src = fr.result };
     fr.readAsDataURL(file);
   });
@@ -333,38 +328,178 @@ let toastT;
 function toast(msg){
   document.querySelector('.toast')?.remove(); clearTimeout(toastT);
   const t = document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t);
-  toastT = setTimeout(()=>t.remove(), 2200);
+  toastT = setTimeout(()=>t.remove(), 2800);
+}
+let busyN = 0;
+function busy(on){
+  busyN = Math.max(0, busyN + (on?1:-1));
+  let el = document.querySelector('.busy');
+  if(busyN && !el){ el = document.createElement('div'); el.className='busy'; document.body.appendChild(el) }
+  if(!busyN && el) el.remove();
+}
+async function run(fn){
+  busy(true);
+  try{ return await fn() }
+  catch(e){ console.error(e); toast(niceErr(e)) }
+  finally{ busy(false) }
 }
 
 /* ================= state ================= */
 const now = new Date();
-let ui = { screen:'welcome', tab:'calendar', y:now.getFullYear(), m:now.getMonth(), sheet:null, err:'' };
-let draft = null;   // team form draft
-let res = null;     // result form draft
+let ui = { screen:'welcome', tab:'calendar', y:now.getFullYear(), m:now.getMonth(), sheet:null, err:'', info:'' };
+let st;               // everything loaded from the database
+function resetState(){
+  let province = null; try{ province = localStorage.getItem('fairplay.province') }catch(e){}
+  st = { user:null, team:null, province, matches:[], rated:new Map(), myAvail:new Set(), monthAvail:{},
+         teams:{}, stats:{}, convos:[], thread:null, ranking:null, teamPage:null };
+}
+resetState();
+let draft = null, res = null, channel = null;
 
-function route(){
-  const u = me();
+const me = () => st.team?.id;
+const other = m => m.challenger === me() ? m.o : m.c;
+const myMatchOn = day => st.matches.find(m => m.day === day && m.status === 'accepted');
+const pendingWith = (day, tid) => st.matches.find(m => m.day === day && m.status === 'pending' && (m.challenger === tid || m.opponent === tid));
+const unreadCount = () => st.convos.filter(c => c.unread).length;
+function remember(...teams){ teams.flat().forEach(t => { if(t?.id) st.teams[t.id] = {...st.teams[t.id], ...t} }) }
+
+/* ================= loading ================= */
+async function loadTeam(){
+  st.team = await q(sb.from('teams').select('*, players(*)').eq('owner', st.user.id).maybeSingle());
+  if(st.team){
+    st.team.players.sort((a,b)=>a.position-b.position);
+    st.province = st.team.province;
+    remember(st.team);
+  }
+}
+async function loadStats(ids){
+  ids = [...new Set(ids)].filter(Boolean);
+  if(!ids.length) return;
+  const rows = await q(sb.from('team_stats').select('*').in('team_id', ids));
+  rows.forEach(r => st.stats[r.team_id] = r);
+}
+async function loadMatches(){
+  const id = me();
+  st.matches = await q(sb.from('matches')
+    .select('*, c:teams!matches_challenger_fkey(id,name,logo_url), o:teams!matches_opponent_fkey(id,name,logo_url)')
+    .or(`challenger.eq.${id},opponent.eq.${id}`).order('day'));
+  st.matches.forEach(m => remember(m.c, m.o));
+  const r = await q(sb.from('ratings').select('match_id,stars').eq('rater', id));
+  st.rated = new Map(r.map(x => [x.match_id, x.stars]));
+}
+async function loadMonth(){
+  const start = iso(new Date(ui.y, ui.m, 1)), end = iso(new Date(ui.y, ui.m+1, 0));
+  const rows = await q(sb.from('availability').select('team_id, day, team:teams!inner(id,name,logo_url,province)')
+    .eq('team.province', st.team.province).gte('day', start).lte('day', end));
+  st.monthAvail = {}; st.myAvail = new Set();
+  for(const a of rows){
+    if(a.team_id === me()) st.myAvail.add(a.day);
+    else { (st.monthAvail[a.day] ||= []).push(a.team); remember(a.team) }
+  }
+  await loadStats(rows.map(a => a.team_id));
+}
+async function loadChats(){
+  const id = me();
+  const rows = await q(sb.from('messages').select('id,sender,recipient,body,created_at,read_at')
+    .or(`sender.eq.${id},recipient.eq.${id}`).order('created_at', {ascending:false}).limit(500));
+  const by = new Map();
+  for(const m of rows){
+    const o = m.sender === id ? m.recipient : m.sender;
+    if(!by.has(o)) by.set(o, {id:o, last:m, unread:false});
+    if(m.recipient === id && !m.read_at) by.get(o).unread = true;
+  }
+  st.convos = [...by.values()];
+  const missing = st.convos.map(c => c.id).filter(x => !st.teams[x]);
+  if(missing.length) remember(await q(sb.from('teams').select('id,name,logo_url,province').in('id', missing)));
+}
+async function loadAll(){
+  await Promise.all([loadMatches(), loadMonth(), loadChats(), loadStats([me()])]);
+}
+async function loadRanking(){
+  const teams = await q(sb.from('teams').select('id,name,logo_url,province').eq('province', st.team.province));
+  remember(teams);
+  await loadStats(teams.map(t => t.id));
+  st.ranking = teams.map(t => t.id);
+}
+
+function subscribe(){
+  if(channel) sb.removeChannel(channel);
+  const id = me();
+  channel = sb.channel('fairplay-' + id)
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'messages', filter:`recipient=eq.${id}`}, p => onMessage(p.new))
+    .on('postgres_changes', {event:'*', schema:'public', table:'matches', filter:`opponent=eq.${id}`}, p => onMatch(p))
+    .on('postgres_changes', {event:'*', schema:'public', table:'matches', filter:`challenger=eq.${id}`}, p => onMatch(p))
+    .subscribe();
+}
+async function onMessage(msg){
+  const open = ui.sheet?.type === 'chat' && ui.sheet.id === msg.sender && st.thread;
+  if(open){
+    if(!st.thread.msgs.some(x => x.id === msg.id)) st.thread.msgs.push(msg);
+    sb.rpc('mark_read', {p_from: msg.sender});
+  }
+  await loadChats().catch(()=>{});
+  if(open) st.convos.forEach(c => { if(c.id === msg.sender) c.unread = false });
+  if(!open) toast(`New message from ${st.teams[msg.sender]?.name || 'a team'}`);
+  refresh();
+}
+async function onMatch(p){
+  const before = st.matches.find(m => m.id === p.new?.id);
+  await Promise.all([loadMatches(), loadMonth()]).catch(()=>{});
+  const after = st.matches.find(m => m.id === p.new?.id);
+  if(after){
+    const o = other(after)?.name || 'A team';
+    if(p.eventType === 'INSERT' && after.opponent === me()) toast(`${o} challenged you for ${short(after.day)}`);
+    else if(before?.status === 'pending' && after.status === 'accepted' && after.challenger === me()) celebrate(after);
+    else if(before?.status === 'pending' && after.status === 'declined' && after.challenger === me()) toast(`${o} declined your request`);
+    else if(before && before.status !== 'cancelled' && after.status === 'cancelled') toast(`Friendly with ${o} on ${short(after.day)} was cancelled`);
+  }
+  refresh();
+}
+
+/* ================= routing ================= */
+async function route(){
   ui.sheet = null;
-  if(!u) ui.screen = 'welcome';
-  else if(!u.province) ui.screen = 'province';
-  else if(!u.team){ newDraft(); ui.screen = 'team' }
-  else ui.screen = 'app';
+  if(!sb){ ui.screen = 'setup'; return render() }
+  if(!st.user){ ui.screen = 'welcome'; return render() }
+  await run(async () => {
+    await loadTeam();
+    if(!st.team){
+      if(!st.province) ui.screen = 'province';
+      else { newDraft(); ui.screen = 'team' }
+      return;
+    }
+    await loadAll();
+    subscribe();
+    ui.screen = 'app';
+  });
+  if(ui.screen !== 'app' && ui.screen !== 'province' && ui.screen !== 'team') ui.screen = 'welcome';
   render();
 }
 function newDraft(){
-  const t = me().team;
-  draft = t ? JSON.parse(JSON.stringify(t))
+  const t = st.team;
+  draft = t ? {name:t.name, logo:t.logo_url, players:t.players.map(p=>({first:p.first_name, last:p.last_name, photo:p.photo_url}))}
             : {name:'', logo:null, players:Array.from({length:8},()=>({first:'',last:'',photo:null}))};
+  while(draft.players.length < 8) draft.players.push({first:'',last:'',photo:null});
 }
 
 /* ================= screens ================= */
 const brand = `<div class="brand">${I.mark}FAIR PLAY</div>`;
-const field = (id,label,type,ph,msg,val='') => `
+const field = (id,label,type,ph,msg,ac) => `
   <div class="field" id="f-${id}"><label for="${id}">${label}</label>
-  <input class="input" id="${id}" type="${type}" placeholder="${ph}" value="${esc(val)}" autocomplete="${type==='password'?'current-password':'email'}">
+  <input class="input" id="${id}" type="${type}" placeholder="${ph}" autocomplete="${ac}">
   <div class="msg">${msg}</div></div>`;
 
 const S = {
+setup: () => `
+  <div class="screen auth setup"><div class="box">${brand}
+    <h1>Connect the database</h1>
+    <p class="lead">This copy of Fair Play is not connected to a Supabase project yet.</p>
+    <ol><li>Create a free project on <b>supabase.com</b></li>
+      <li>Run <code>supabase/schema.sql</code> in the SQL Editor</li>
+      <li>Paste the project URL and anon key into <code>config.js</code></li>
+      <li>Reload this page</li></ol>
+  </div></div>`,
+
 welcome: () => `
   <div class="screen welcome">
     <div class="hero">${I.mark}<h1>FAIR PLAY</h1>
@@ -375,8 +510,9 @@ welcome: () => `
 login: () => `
   <form class="screen auth" data-form="login" novalidate><div class="box">
     ${brand}<h1>Welcome back</h1><p class="lead">Log in to find a match near you.</p>
-    ${field('email','Email','email','you@example.com','Enter your email')}
-    ${field('pw','Password','password','Enter your password','Enter your password')}
+    ${field('email','Email','email','you@example.com','Enter your email','email')}
+    ${field('pw','Password','password','Enter your password','Enter your password','current-password')}
+    <div class="info">${esc(ui.info)}</div>
     <div class="form-error">${esc(ui.err)}</div>
     <div class="push">
       <button class="btn btn-primary" type="submit">Log in</button>
@@ -387,8 +523,8 @@ login: () => `
 signup: () => `
   <form class="screen auth" data-form="signup" novalidate><div class="box">
     ${brand}<h1>Join Fair Play</h1><p class="lead">Create an account to find teams nearby.</p>
-    ${field('email','Email','email','you@example.com','Enter a valid email address')}
-    ${field('pw','Password','password','Enter your password','Use at least 6 characters')}
+    ${field('email','Email','email','you@example.com','Enter a valid email address','email')}
+    ${field('pw','Password','password','Enter your password','Use at least 8 characters','new-password')}
     <div class="form-error">${esc(ui.err)}</div>
     <div class="push">
       <button class="btn btn-primary" type="submit">Create account</button>
@@ -401,18 +537,19 @@ province: () => `
     ${brand}<h1>Forfeit? Play a friendly</h1>
     <p class="lead">Your opponent can't make it. Find another team in your province for the same matchday.</p>
     <div class="label">Choose your province</div>
-    ${PROVINCES.map(p=>`<button class="prov ${me().province===p.id?'on':''}" data-act="pickProv" data-arg="${p.id}">${provIcon(p)}${p.name}<span class="chev">${I.chev}</span></button>`).join('')}
-    ${me().team ? `<button class="btn btn-outline" style="margin-top:8px" data-act="go" data-arg="app">Cancel</button>` : ''}
+    ${PROVINCES.map(p=>`<button class="prov ${st.province===p.id?'on':''}" data-act="pickProv" data-arg="${p.id}">${provIcon(p)}${p.name}<span class="chev">${I.chev}</span></button>`).join('')}
+    ${st.team ? `<button class="btn btn-outline" style="margin-top:8px" data-act="go" data-arg="app">Cancel</button>`
+              : `<button class="btn btn-outline" style="margin-top:8px" data-act="logout">Log out</button>`}
   </div></div>`,
 
 team: () => {
-  const editing = !!me().team;
+  const editing = !!st.team;
   return `
   <div class="screen team-edit ${editing?'with-nav':''}">${editing?'':brand}
     <div class="${editing?'inner':''}">
-    <h1>Your team</h1><p class="lead">${prov(me().province).name} · All fields are required</p>
+    <h1>Your team</h1><p class="lead">${prov(st.province).name} · All fields are required</p>
     <div class="label">Team logo</div>
-    <label class="logo-up" id="logoBox">${draft.logo?`<img src="${draft.logo}" alt="">`:''}${I.cam}Upload
+    <label class="logo-up" id="logoBox">${draft.logo?`<img src="${esc(draft.logo)}" alt="">`:''}${I.cam}Upload
       <input type="file" accept="image/*" hidden data-file="logo"></label>
     <div class="field" id="f-tname" style="margin-top:0"><div class="label">Team name</div>
       <input class="input" id="tname" placeholder="Enter your team name" value="${esc(draft.name)}" data-draft="name" maxlength="40">
@@ -420,17 +557,17 @@ team: () => {
     <div class="label">Players (minimum 8)</div>
     <div class="players-wrap">${draft.players.map((p,i)=>`
       <div class="player">
-        <label class="ph">${p.photo?`<img src="${p.photo}" alt="">`:I.cam}<input type="file" accept="image/*" hidden data-file="p${i}"></label>
+        <label class="ph">${p.photo?`<img src="${esc(p.photo)}" alt="">`:I.cam}<input type="file" accept="image/*" hidden data-file="p${i}"></label>
         <div class="pf"><div class="pn">Player ${i+1}</div>
-          <div class="row"><input class="input" placeholder="First name" value="${esc(p.first)}" data-draft="${i}.first" data-req>
-          <input class="input" placeholder="Last name" value="${esc(p.last)}" data-draft="${i}.last" data-req></div></div>
+          <div class="row"><input class="input" placeholder="First name" value="${esc(p.first)}" data-draft="${i}.first" data-req maxlength="40">
+          <input class="input" placeholder="Last name" value="${esc(p.last)}" data-draft="${i}.last" data-req maxlength="40"></div></div>
         ${i>=8?`<button class="rm" type="button" data-act="rmPlayer" data-arg="${i}" aria-label="Remove player">${I.x}</button>`:''}
       </div>`).join('')}</div>
     ${draft.players.length<14?`<button class="btn btn-accent-outline" data-act="addPlayer">${I.plus}Add player</button>`:''}
     <div class="form-error" id="teamErr"></div>
     <button class="btn btn-primary" style="margin-top:6px" data-act="saveTeam">Save team</button>
     <button class="btn btn-outline" data-act="go" data-arg="province">Change province</button>
-    ${editing?`<button class="btn btn-outline" data-act="go" data-arg="app">Cancel</button>`:''}
+    ${editing?`<button class="btn btn-outline" data-act="go" data-arg="app">Cancel</button>`:`<button class="btn btn-outline" data-act="logout">Log out</button>`}
     </div>
   </div>${editing?nav():''}`;
 },
@@ -439,154 +576,181 @@ app: () => `<div class="screen with-nav"><div class="inner">${TABS[ui.tab]()}</d
 };
 
 function nav(){
-  const u = me(), t = myTeam(), cur = ui.screen==='app' ? ui.tab : '';
-  const item = (id,icon,label) => `<button class="nav-item ${cur===id?'on':''}" data-act="tab" data-arg="${id}">${icon}${label}${id==='chat'&&unread()?'<span class="dot"></span>':''}</button>`;
+  const t = st.team, cur = ui.screen==='app' ? ui.tab : '';
+  const item = (id,icon,label) => `<button class="nav-item ${cur===id?'on':''}" data-act="tab" data-arg="${id}">${icon}${label}${id==='chat'&&unreadCount()?'<span class="dot"></span>':''}</button>`;
   return `<nav class="nav">
     <div class="brand nav-brand">${I.mark}FAIR PLAY</div>
     ${item('calendar',I.cal,'CALENDAR')}${item('chat',I.chat,'CHAT')}${item('board',I.trophy,'BOARD')}
     <div class="nav-foot">
-      <button class="list-row" data-act="teamPage" data-arg="me">${logo(t,36)}<span class="grow"><b>${esc(t.name)}</b><small>${prov(u.province).name}</small></span></button>
+      <button class="list-row" data-act="teamPage" data-arg="${t.id}">${logo(t,36)}<span class="grow"><b>${esc(t.name)}</b><small>${prov(t.province).name}</small></span></button>
       <button class="btn btn-outline btn-sm" style="width:100%" data-act="logout">${I.logout}Log out</button>
     </div></nav>`;
 }
-
 function topbar(){
-  const t = myTeam();
+  const t = st.team;
   return `<div class="topbar">
-    <button class="topbar" style="margin:0;flex:1;min-width:0" data-act="teamPage" data-arg="me">${logo(t,36)}
-      <span class="who"><b>${esc(t.name)}</b><span>${prov(me().province).name}</span></span></button>
+    <button class="topbar" style="margin:0;flex:1;min-width:0" data-act="teamPage" data-arg="${t.id}">${logo(t,36)}
+      <span class="who"><b>${esc(t.name)}</b><span>${prov(t.province).name}</span></span></button>
     <button class="btn btn-outline btn-sm tb-logout" data-act="logout">Log out</button></div>`;
 }
 
 /* ================= tabs ================= */
 const TABS = {
 calendar: () => {
-  const u = me(), first = new Date(ui.y, ui.m, 1), days = new Date(ui.y, ui.m+1, 0).getDate();
+  const first = new Date(ui.y, ui.m, 1), days = new Date(ui.y, ui.m+1, 0).getDate();
   const lead = (first.getDay()+6)%7, today = todayIso();
   const atStart = ui.y===now.getFullYear() && ui.m===now.getMonth();
   let cells = ['Mo','Tu','We','Th','Fr','Sa','Su'].map(d=>`<div class="wd">${d}</div>`).join('');
   cells += '<div></div>'.repeat(lead);
   for(let d=1; d<=days; d++){
     const ds = iso(new Date(ui.y, ui.m, d)), past = ds < today;
-    const n = past ? 0 : teamsOn(ds).length, match = activeMatch(ds);
-    const cls = ['day', ds===today?'today':'', u.avail.includes(ds)?'placed':'', match?'matched':''].join(' ');
+    const n = past ? 0 : (st.monthAvail[ds]||[]).length, match = myMatchOn(ds);
+    const req = st.matches.some(m => m.day===ds && m.status==='pending');
+    const cls = ['day', ds===today?'today':'', st.myAvail.has(ds)?'placed':'', match?'matched':''].join(' ');
     cells += `<button class="${cls}" ${past?'disabled':''} data-act="day" data-arg="${ds}" aria-label="${nice(ds)}, ${n} teams available">${d}
-      ${n?`<span class="cnt">${n}</span>`:''}${match?'<span class="ball"></span>':''}</button>`;
+      ${n?`<span class="cnt">${n}</span>`:''}${match?'<span class="ball"></span>':''}${req&&!past?'<span class="req"></span>':''}</button>`;
   }
-  const upcoming = u.matches.filter(m=>m.status==='scheduled').sort((a,b)=>a.date.localeCompare(b.date));
   return `${topbar()}
   <div class="two"><div>
     <h1>Pick your matchday</h1>
-    <p class="lead">The day your official match was cancelled. Numbers show teams in ${prov(u.province).name} that are free. A dashed outline marks days where you placed your team.</p>
+    <p class="lead">The day your official match was cancelled. Numbers show teams in ${prov(st.team.province).name} that are free. A dashed outline marks days where you placed your team.</p>
     <div class="month"><b>${first.toLocaleDateString('en-GB',{month:'long',year:'numeric'})}</b>
       <div class="arrows"><button class="icon-btn" data-act="month" data-arg="-1" ${atStart?'disabled':''} aria-label="Previous month">${I.left}</button>
       <button class="icon-btn" data-act="month" data-arg="1" aria-label="Next month">${I.chev}</button></div></div>
     <div class="cal">${cells}</div>
     <div class="legend"><span><i style="background:var(--accent);border-radius:50%"></i>Teams free</span>
       <span><i style="border:1.5px dashed var(--accent)"></i>Your team placed</span>
-      <span><i style="background:var(--accent)"></i>Friendly planned</span></div>
-  </div><div>
-    <div class="label">Your friendlies</div>
-    ${upcoming.length ? upcoming.map(matchRow).join('') : `<div class="empty">No friendlies planned yet. Tap a day to find an opponent.</div>`}
-  </div></div>`;
+      <span><i style="background:var(--accent)"></i>Friendly planned</span>
+      <span><i style="background:#FFB84D;border-radius:50%;width:8px;height:8px"></i>Open request</span></div>
+  </div><div>${friendlies()}</div></div>`;
 },
 
-chat: () => {
-  const u = me(), ids = Object.keys(u.chats).sort((a,b)=>(u.chats[b].msgs.at(-1)?.t||0)-(u.chats[a].msgs.at(-1)?.t||0));
-  return `${topbar()}<h1>Chat</h1><p class="lead">Arrange time and place with your opponents.</p><div class="label">Conversations</div>
-  ${ids.length ? ids.map(id=>{ const t=teamById(id), c=u.chats[id], last=c.msgs.at(-1);
-    return `<button class="list-row" data-act="chat" data-arg="${id}">${logo(t,44)}<span class="grow"><b>${esc(t.name)}</b>
-      <small>${last?esc((last.from==='me'?'You: ':'')+last.text):''}</small></span>${c.unread?'<span class="pill win">New</span>':''}</button>` }).join('')
-  : `<div class="empty">No conversations yet. Challenge a team on the calendar to start chatting.</div>`}`;
-},
+chat: () => `${topbar()}<h1>Chat</h1><p class="lead">Arrange time and place with your opponents.</p><div class="label">Conversations</div>
+  ${st.convos.length ? st.convos.map(c=>{ const t=st.teams[c.id]||{name:'Team'};
+    return `<button class="list-row" data-act="chat" data-arg="${c.id}">${logo(t,44)}<span class="grow"><b>${esc(t.name)}</b>
+      <small>${esc((c.last.sender===me()?'You: ':'')+c.last.body)}</small></span>${c.unread?'<span class="pill win">New</span>':''}</button>` }).join('')
+  : `<div class="empty">No conversations yet. Challenge a team on the calendar, or open a team and send a message.</div>`}`,
 
 board: () => {
-  const u = me(), s = myStats(), t = myTeam();
-  const scheduled = u.matches.filter(m=>m.status==='scheduled').sort((a,b)=>a.date.localeCompare(b.date));
-  const played = u.matches.filter(m=>m.status==='played').sort((a,b)=>b.date.localeCompare(a.date));
-  const ranking = [...fakeTeams(u.province).map(t=>({t, r:t.rating, n:t.w+t.d+t.l})), {t, r:s.rating, n:s.played}]
-    .sort((a,b)=>b.r-a.r);
-  return `${topbar()}<h1>Friendly board</h1><p class="lead">Results, fair play ratings and teams in ${prov(u.province).name}.</p>
+  const s = st.stats[me()] || {}, t = st.team;
+  const played = st.matches.filter(m=>m.status==='played').sort((a,b)=>b.day.localeCompare(a.day));
+  const ranking = st.ranking ? st.ranking.map(id=>({t:st.teams[id], s:st.stats[id]||{}}))
+      .sort((a,b)=>(b.s.rating??-1)-(a.s.rating??-1) || (b.s.played||0)-(a.s.played||0)) : null;
+  return `${topbar()}<h1>Friendly board</h1><p class="lead">Results, fair play ratings and teams in ${prov(t.province).name}.</p>
   <div class="two"><div>
     <div class="label">Your team</div>
     <div class="card"><div style="display:flex;gap:12px;align-items:center">${logo(t,52)}<div style="flex:1;min-width:0">
-      <b style="font-size:17px">${esc(t.name)}</b><div style="margin-top:4px">${stars(s.rating)} <small style="color:var(--muted)">${s.rating?s.rating.toFixed(1):'No ratings yet'}</small></div></div></div>
-      <div class="stats"><div class="stat"><b>${s.played}</b><span>Played</span></div><div class="stat"><b>${s.w}</b><span>Won</span></div><div class="stat"><b>${s.d}</b><span>Draw</span></div><div class="stat"><b>${s.l}</b><span>Lost</span></div></div>
-      <div class="row-actions"><button class="btn btn-outline btn-sm" data-act="teamPage" data-arg="me">View team</button><button class="btn btn-outline btn-sm" data-act="editTeam">Edit team</button></div></div>
-    <div class="label">Upcoming friendlies</div>
-    ${scheduled.length ? scheduled.map(matchRow).join('') : `<div class="empty">Nothing planned.</div>`}
+      <b style="font-size:17px">${esc(t.name)}</b><div style="margin-top:4px">${stars(s.rating)} <small style="color:var(--muted)">${s.rating?(+s.rating).toFixed(1):'No ratings yet'}</small></div></div></div>
+      ${statsGrid(s)}
+      <div class="row-actions"><button class="btn btn-outline btn-sm" data-act="teamPage" data-arg="${t.id}">View team</button><button class="btn btn-outline btn-sm" data-act="editTeam">Edit team</button></div></div>
     <div class="label">Results</div>
-    ${played.length ? played.map(m=>{ const o=teamById(m.opp), r=m.my>m.their?'win':m.my<m.their?'loss':'';
-      return `<div class="list-row">${logo(o,40)}<span class="grow"><b>${esc(o.name)}</b><small>${short(m.date)} · you rated ${m.stars}★</small></span>
-        <span class="pill ${r}">${m.my} – ${m.their}</span></div>` }).join('') : `<div class="empty">No results yet.</div>`}
+    ${played.length ? played.map(m=>{ const o=other(m), mine=m.challenger===me();
+      const my = mine?m.challenger_score:m.opponent_score, th = mine?m.opponent_score:m.challenger_score;
+      const r = my>th?'win':my<th?'loss':'', given = st.rated.get(m.id);
+      return `<div class="list-row">${logo(o,40)}<span class="grow"><b>${esc(o.name)}</b><small>${short(m.day)} · ${given?`you rated ${given}★`:'not rated yet'}</small></span>
+        ${given?'':`<button class="btn btn-primary btn-sm" data-act="result" data-arg="${m.id}">Rate</button>`}
+        <span class="pill ${r}">${my} – ${th}</span></div>` }).join('') : `<div class="empty">No results yet.</div>`}
   </div><div>
     <div class="label">Fair play ranking</div>
-    ${ranking.map((x,i)=>`<button class="list-row" data-act="teamPage" data-arg="${x.t.id}"><b style="width:18px;color:var(--muted)">${i+1}</b>${logo(x.t,38)}
-      <span class="grow"><b>${esc(x.t.name)}${x.t.mine?' (you)':''}</b><small>${stars(x.r)} ${x.r?x.r.toFixed(1):'–'} · ${x.n} played</small></span></button>`).join('')}
+    ${!ranking ? `<div class="empty">Loading…</div>` : ranking.map((x,i)=>`<button class="list-row" data-act="teamPage" data-arg="${x.t.id}"><b style="width:18px;color:var(--muted)">${i+1}</b>${logo(x.t,38)}
+      <span class="grow"><b>${esc(x.t.name)}${x.t.id===me()?' (you)':''}</b><small>${stars(x.s.rating)} ${x.s.rating?(+x.s.rating).toFixed(1):'–'} · ${x.s.played||0} played</small></span></button>`).join('')}
   </div></div>`;
 },
 };
 
+const statsGrid = s => `<div class="stats"><div class="stat"><b>${s.played||0}</b><span>Played</span></div><div class="stat"><b>${s.won||0}</b><span>Won</span></div><div class="stat"><b>${s.drawn||0}</b><span>Draw</span></div><div class="stat"><b>${s.lost||0}</b><span>Lost</span></div></div>`;
+
+function friendlies(){
+  const today = todayIso();
+  const incoming = st.matches.filter(m=>m.status==='pending' && m.opponent===me() && m.day>=today);
+  const outgoing = st.matches.filter(m=>m.status==='pending' && m.challenger===me() && m.day>=today);
+  const planned  = st.matches.filter(m=>m.status==='accepted');
+  return `${incoming.length?`<div class="label">Requests for you</div>${incoming.map(matchRow).join('')}`:''}
+    <div class="label">Your friendlies</div>
+    ${planned.length ? planned.map(matchRow).join('') : `<div class="empty">No friendlies planned yet. Tap a day to find an opponent.</div>`}
+    ${outgoing.length?`<div class="label">Waiting for an answer</div>${outgoing.map(matchRow).join('')}`:''}`;
+}
 function matchRow(m){
-  const o = teamById(m.opp);
-  return `<div class="list-row" style="display:block"><div style="display:flex;gap:12px;align-items:center">${logo(o,40)}
-    <span class="grow"><b>${esc(o.name)}</b><small>${nice(m.date)}</small></span></div>
-    <div class="row-actions"><button class="btn btn-outline btn-sm" data-act="chat" data-arg="${m.opp}">Chat</button>
-    <button class="btn btn-outline btn-sm" data-act="result" data-arg="${m.id}">Enter result</button>
-    <button class="btn btn-danger btn-sm" data-act="cancelMatch" data-arg="${m.id}">Cancel</button></div></div>`;
+  const o = other(m), today = todayIso();
+  let acts = '';
+  if(m.status==='pending' && m.opponent===me())
+    acts = `<button class="btn btn-primary btn-sm" data-act="respond" data-arg="${m.id}|1">Accept</button>
+            <button class="btn btn-outline btn-sm" data-act="respond" data-arg="${m.id}|0">Decline</button>
+            <button class="btn btn-outline btn-sm" data-act="chat" data-arg="${o.id}">Chat</button>`;
+  else if(m.status==='pending')
+    acts = `<span class="pill wait">Waiting</span>
+            <button class="btn btn-outline btn-sm" data-act="chat" data-arg="${o.id}">Chat</button>
+            <button class="btn btn-danger btn-sm" data-act="cancelMatch" data-arg="${m.id}">Withdraw</button>`;
+  else if(m.status==='accepted')
+    acts = `<button class="btn btn-outline btn-sm" data-act="chat" data-arg="${o.id}">Chat</button>
+            ${m.day<=today?`<button class="btn btn-primary btn-sm" data-act="result" data-arg="${m.id}">Enter result</button>`:''}
+            <button class="btn btn-danger btn-sm" data-act="cancelMatch" data-arg="${m.id}">Cancel</button>`;
+  return `<div class="list-row" style="display:block"><div style="display:flex;gap:12px;align-items:center">
+    <button data-act="teamPage" data-arg="${o.id}" style="flex:none">${logo(o,40)}</button>
+    <span class="grow"><b>${esc(o.name)}</b><small>${nice(m.day)}</small></span></div>
+    <div class="row-actions">${acts}</div></div>`;
 }
 
 /* ================= sheets ================= */
 const SH = {
 day: ({date}) => {
-  const u = me(), match = activeMatch(date), teams = teamsOn(date), placed = u.avail.includes(date);
+  const match = myMatchOn(date), teams = st.monthAvail[date] || [], placed = st.myAvail.has(date);
   return `<div class="sheet"><div class="sheet-head"><h2>${nice(date)}</h2><button class="icon-btn" data-act="close" aria-label="Close">${I.x}</button></div>
     ${match ? `<div class="label" style="margin-top:0">Your friendly</div>${matchRow(match)}` : `
       <button class="btn ${placed?'btn-outline':'btn-accent-outline'}" data-act="togglePlace" data-arg="${date}">${placed?'Remove my team from this day':'Place my team on this day'}</button>
-      <p class="lead" style="font-size:13px">${placed?'Other teams in your province can see you are free.':'Let other teams know you are looking for a friendly.'}</p>`}
-    <div class="label">${teams.length} team${teams.length===1?'':'s'} available in ${prov(u.province).name}</div>
-    ${teams.length ? teams.map(t=>`<div class="list-row">
+      <p class="lead" style="font-size:13px">${placed?'Other teams in your province can see you are free and challenge you.':'Let other teams know you are looking for a friendly.'}</p>`}
+    <div class="label">${teams.length} team${teams.length===1?'':'s'} available in ${prov(st.team.province).name}</div>
+    ${teams.length ? teams.map(t=>{ const s = st.stats[t.id]||{}, p = pendingWith(date, t.id);
+      const btn = match ? '' : !p ? `<button class="btn btn-primary btn-sm" data-act="challenge" data-arg="${date}|${t.id}">Challenge</button>`
+        : p.challenger===me() ? `<span class="pill wait">Request sent</span>`
+        : `<button class="btn btn-primary btn-sm" data-act="respond" data-arg="${p.id}|1">Accept</button>`;
+      return `<div class="list-row">
       <button data-act="teamPage" data-arg="${t.id}" style="display:flex;gap:12px;align-items:center;flex:1;min-width:0;text-align:left">${logo(t,42)}
-        <span class="grow"><b>${esc(t.name)}</b><small>${stars(t.rating)} ${t.rating.toFixed(1)}</small></span></button>
-      ${match ? (match.opp===t.id?'<span class="pill win">Your match</span>':'') : `<button class="btn btn-primary btn-sm" data-act="challenge" data-arg="${date}|${t.id}">Challenge</button>`}
-    </div>`).join('') : `<div class="empty">No teams free on this day. Place your team so others can find you.</div>`}
+        <span class="grow"><b>${esc(t.name)}</b><small>${stars(s.rating)} ${s.rating?(+s.rating).toFixed(1):'No ratings yet'}</small></span></button>${btn}
+    </div>`}).join('') : `<div class="empty">No other teams placed on this day yet. Place your team so others can find you.</div>`}
   </div>`;
 },
 
 team: ({id}) => {
-  const t = teamById(id), mine = id==='me', s = mine ? myStats() : {w:t.w,d:t.d,l:t.l,played:t.w+t.d+t.l,rating:t.rating};
+  const t = st.teamPage?.id === id ? st.teamPage : null;
+  if(!t) return `<div class="sheet"><div class="empty">Loading…</div></div>`;
+  const mine = id===me(), s = st.stats[id] || {};
   return `<div class="sheet"><div class="sheet-head"><h2></h2><button class="icon-btn" data-act="close" aria-label="Close">${I.x}</button></div>
-    <div style="text-align:center">${logo(t,88).replace('class="logo"','class="logo" style="margin:0 auto"')}
+    <div style="text-align:center"><div style="display:flex;justify-content:center">${logo(t,88)}</div>
       <h1 style="margin-top:12px">${esc(t.name)}</h1>
-      <p class="lead">${prov(me().province).name}</p>
-      <div style="margin-top:8px">${stars(s.rating)} <small style="color:var(--muted)">${s.rating?s.rating.toFixed(1)+' fair play':'No ratings yet'}</small></div></div>
-    <div class="stats"><div class="stat"><b>${s.played}</b><span>Played</span></div><div class="stat"><b>${s.w}</b><span>Won</span></div><div class="stat"><b>${s.d}</b><span>Draw</span></div><div class="stat"><b>${s.l}</b><span>Lost</span></div></div>
+      <p class="lead">${prov(t.province).name}</p>
+      <div style="margin-top:8px">${stars(s.rating)} <small style="color:var(--muted)">${s.rating?(+s.rating).toFixed(1)+' fair play · '+s.rating_count+' rating'+(s.rating_count===1?'':'s'):'No ratings yet'}</small></div></div>
+    ${statsGrid(s)}
     <div class="label">Players</div>
-    <div class="players-grid">${t.players.map(p=>`<div>${avatar(p,48)}<span>${esc(p.first)}</span><span>${esc(p.last)}</span></div>`).join('')}</div>
+    <div class="players-grid">${t.players.map(p=>`<div>${avatar(p,48)}<span>${esc(p.first_name)}</span><span>${esc(p.last_name)}</span></div>`).join('')}</div>
     ${mine ? `<button class="btn btn-outline" style="margin-top:22px" data-act="editTeam">Edit team</button>` :
       `<button class="btn btn-outline" style="margin-top:22px" data-act="chat" data-arg="${t.id}">Message team</button>`}
   </div>`;
 },
 
 chat: ({id}) => {
-  const t = teamById(id), c = me().chats[id] || {msgs:[]};
+  const t = st.teams[id] || {name:'Team'}, msgs = st.thread?.id === id ? st.thread.msgs : null;
   return `<div class="sheet full"><div class="sheet-head"><button class="icon-btn" data-act="close" aria-label="Back">${I.left}</button>
-      ${logo(t,36)}<h2 style="font-size:17px">${esc(t.name)}</h2></div>
-    <div class="msgs" id="msgs">${c.msgs.map(m=>`<div class="bubble ${m.from}">${esc(m.text)}</div>`).join('')}</div>
-    <form class="composer" data-form="msg"><input class="input" id="msgIn" placeholder="Write a message…" autocomplete="off">
+      <button data-act="teamPage" data-arg="${id}" style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">${logo(t,36)}<h2 style="font-size:17px;text-align:left">${esc(t.name)}</h2></button></div>
+    <div class="msgs" id="msgs">${!msgs ? '<div class="bubble sys">Loading…</div>' : msgs.length ? msgs.map(m=>`<div class="bubble ${m.sender===me()?'me':'them'}">${esc(m.body)}<span class="time">${clock(m.created_at)}</span></div>`).join('')
+      : '<div class="bubble sys">No messages yet. Say hi!</div>'}</div>
+    <form class="composer" data-form="msg"><input class="input" id="msgIn" placeholder="Write a message…" autocomplete="off" maxlength="1000">
       <button class="send" type="submit" aria-label="Send">${I.send}</button></form></div>`;
 },
 
 result: ({mid}) => {
-  const m = me().matches.find(x=>x.id===mid), o = teamById(m.opp), t = myTeam();
-  const step = k => `<div class="stepper"><button class="icon-btn" data-act="score" data-arg="${k}|-1" aria-label="Minus">${I.minus}</button><b>${res[k]}</b><button class="icon-btn" data-act="score" data-arg="${k}|1" aria-label="Plus">${I.plus}</button></div>`;
-  return `<div class="sheet"><div class="sheet-head"><h2>Enter result</h2><button class="icon-btn" data-act="close" aria-label="Close">${I.x}</button></div>
-    <p class="lead" style="margin-top:-8px">${nice(m.date)}</p>
+  const m = st.matches.find(x=>x.id===mid), o = other(m), t = st.team, done = m.status==='played';
+  const mine = m.challenger===me();
+  const shown = done ? {my: mine?m.challenger_score:m.opponent_score, their: mine?m.opponent_score:m.challenger_score} : res;
+  const step = k => done ? `<div class="stepper"><b>${shown[k]}</b></div>`
+    : `<div class="stepper"><button class="icon-btn" data-act="score" data-arg="${k}|-1" aria-label="Minus">${I.minus}</button><b>${res[k]}</b><button class="icon-btn" data-act="score" data-arg="${k}|1" aria-label="Plus">${I.plus}</button></div>`;
+  return `<div class="sheet"><div class="sheet-head"><h2>${done?'Rate your opponent':'Enter result'}</h2><button class="icon-btn" data-act="close" aria-label="Close">${I.x}</button></div>
+    <p class="lead" style="margin-top:-8px">${nice(m.day)}${done?' · score entered by '+(m.result_by===me()?'you':esc(o.name)):''}</p>
     <div class="score"><div class="side">${step('my')}<small>${esc(t.name)}</small></div><b style="color:var(--muted)">–</b><div class="side">${step('their')}<small>${esc(o.name)}</small></div></div>
     <div class="label" style="text-align:center">Rate ${esc(o.name)}'s fair play</div>
     <div class="rate ${res.bad?'invalid':''}">${[1,2,3,4,5].map(i=>`<button data-act="rate" data-arg="${i}" aria-label="${i} stars">${star(i<=res.stars,true)}</button>`).join('')}</div>
-    <p class="form-error" style="text-align:center">${res.bad?'Give a rating to save the result':''}</p>
-    <button class="btn btn-primary" style="margin-top:10px" data-act="saveResult" data-arg="${mid}">Save result</button></div>`;
+    <p class="form-error" style="text-align:center">${res.bad?'Give a rating to save':''}</p>
+    <button class="btn btn-primary" style="margin-top:10px" data-act="saveResult" data-arg="${mid}">Save</button></div>`;
 },
 };
 
@@ -597,19 +761,42 @@ function render(){
 }
 function renderSheet(){
   const L = document.getElementById('layer');
+  const keep = document.getElementById('msgIn')?.value;
   L.innerHTML = ui.sheet ? `<div class="overlay" data-act="backdrop">${SH[ui.sheet.type](ui.sheet)}</div>` : '';
+  const inp = document.getElementById('msgIn'); if(inp && keep) inp.value = keep;
   const msgs = document.getElementById('msgs'); if(msgs) msgs.scrollTop = msgs.scrollHeight;
   document.body.style.overflow = ui.sheet ? 'hidden' : '';
 }
 function openSheet(s){ ui.sheet = s; renderSheet() }
-function refresh(){ document.getElementById('app').innerHTML = S[ui.screen](); renderSheet() }
+function refresh(){ if(ui.screen==='app' || ui.screen==='team') document.getElementById('app').innerHTML = S[ui.screen](); renderSheet() }
 
 /* ================= actions ================= */
+async function uploadImage(dataUrl, tag){
+  const blob = await (await fetch(dataUrl)).blob();
+  const path = `${st.user.id}/${Date.now()}-${tag}-${Math.random().toString(36).slice(2,8)}.jpg`;
+  await q(sb.storage.from('media').upload(path, blob, {contentType:'image/jpeg'}));
+  return sb.storage.from('media').getPublicUrl(path).data.publicUrl;
+}
+
 const A = {
-  go(s){ ui.err=''; if(s==='app'){ route(); return } ui.screen=s; window.scrollTo(0,0); render() },
-  tab(t){ ui.tab=t; ui.screen='app'; ui.sheet=null; window.scrollTo(0,0); render() },
-  logout(){ db.session=null; save(); ui.tab='calendar'; route() },
-  pickProv(id){ me().province=id; save(); if(!me().team){ newDraft(); ui.screen='team'; render() } else { toast('Province changed'); route() } },
+  go(s){ ui.err=''; if(s!=='login') ui.info=''; if(s==='app'){ ui.sheet=null; ui.screen='app'; render(); return } ui.screen=s; window.scrollTo(0,0); render() },
+  tab(t){
+    ui.tab=t; ui.screen='app'; ui.sheet=null; window.scrollTo(0,0); render();
+    if(t==='board') run(async()=>{ await Promise.all([loadRanking(), loadStats([me()]), loadMatches()]); refresh() });
+    if(t==='chat') run(async()=>{ await loadChats(); refresh() });
+  },
+  logout(){ run(async()=>{
+    if(channel){ sb.removeChannel(channel); channel=null }
+    st.user = null;
+    await sb.auth.signOut();
+    resetState(); ui.tab='calendar'; ui.info=''; ui.err='';
+    route();
+  })},
+  pickProv(id){
+    st.province = id; try{ localStorage.setItem('fairplay.province', id) }catch(e){}
+    if(!st.team){ newDraft(); ui.screen='team'; render(); return }
+    run(async()=>{ await q(sb.from('teams').update({province:id}).eq('id', me())); toast('Province changed'); await route() });
+  },
   editTeam(){ newDraft(); ui.sheet=null; ui.screen='team'; window.scrollTo(0,0); render() },
   addPlayer(){ draft.players.push({first:'',last:'',photo:null}); render() },
   rmPlayer(i){ draft.players.splice(+i,1); render() },
@@ -619,68 +806,101 @@ const A = {
     mark(document.getElementById('logoBox'), !draft.logo);
     mark(document.getElementById('f-tname'), !draft.name.trim());
     document.querySelectorAll('[data-req]').forEach(el=>mark(el,!el.value.trim()));
-    if(first){ document.getElementById('teamErr').textContent='Fill in all fields marked in red.'; first.scrollIntoView({behavior:'smooth',block:'center'}); return }
-    draft.name = draft.name.trim();
-    draft.players.forEach(p=>{p.first=p.first.trim(); p.last=p.last.trim()});
-    me().team = draft; save(); toast('Team saved'); ui.tab='calendar'; route();
+    const err = document.getElementById('teamErr');
+    if(first){ err.textContent='Fill in all fields marked in red.'; first.scrollIntoView({behavior:'smooth',block:'center'}); return }
+    err.textContent='';
+    run(async()=>{
+      const logoUrl = draft.logo.startsWith('data:') ? await uploadImage(draft.logo,'logo') : draft.logo;
+      const row = {name:draft.name.trim(), province:st.province, logo_url:logoUrl};
+      const team = st.team ? await q(sb.from('teams').update(row).eq('id', me()).select().single())
+                           : await q(sb.from('teams').insert(row).select().single());
+      const players = await Promise.all(draft.players.map(async (p,i)=>({
+        team_id:team.id, position:i, first_name:p.first.trim(), last_name:p.last.trim(),
+        photo_url: p.photo?.startsWith('data:') ? await uploadImage(p.photo,'p'+i) : (p.photo || null) })));
+      await q(sb.from('players').upsert(players, {onConflict:'team_id,position'}));
+      await q(sb.from('players').delete().eq('team_id', team.id).gte('position', players.length));
+      try{ localStorage.removeItem('fairplay.province') }catch(e){}
+      toast('Team saved'); ui.tab='calendar';
+      await route();
+    });
   },
-  month(d){ ui.m += +d; if(ui.m<0){ui.m=11;ui.y--} if(ui.m>11){ui.m=0;ui.y++} refresh() },
+  month(d){
+    ui.m += +d; if(ui.m<0){ui.m=11;ui.y--} if(ui.m>11){ui.m=0;ui.y++}
+    refresh(); run(async()=>{ await Promise.all([loadMonth(), loadMatches()]); refresh() });
+  },
   day(date){ openSheet({type:'day', date}) },
-  close(){ ui.sheet=null; renderSheet() },
+  close(){ ui.sheet=null; st.thread=null; renderSheet(); refresh() },
   backdrop(_,el,e){ if(e.target===el) A.close() },
-  togglePlace(date){
-    const a = me().avail, i = a.indexOf(date);
-    i>=0 ? a.splice(i,1) : a.push(date); save();
-    toast(i>=0 ? 'Removed from this day' : 'Your team is placed'); refresh();
-  },
-  challenge(arg){
-    const [date,id] = arg.split('|'), u = me();
-    if(activeMatch(date)) return;
-    const m = {id:'m'+Date.now(), date, opp:id, status:'scheduled'};
-    u.matches.push(m);
-    const i = u.avail.indexOf(date); if(i>=0) u.avail.splice(i,1);
-    const c = u.chats[id] ||= {msgs:[], unread:false};
-    c.msgs.push({from:'sys', text:`Friendly planned for ${nice(date)}`, t:Date.now()});
-    c.msgs.push({from:'them', text:`Hi! We're in for ${short(date)} 🙌 Where do you want to play?`, t:Date.now()+1});
-    c.unread = true; save();
-    ui.sheet=null; renderSheet(); refresh(); celebrate(m);
-  },
+  togglePlace(date){ run(async()=>{
+    if(st.myAvail.has(date)){ await q(sb.from('availability').delete().eq('team_id', me()).eq('day', date)); toast('Removed from this day') }
+    else { await q(sb.from('availability').insert({team_id:me(), day:date})); toast('Your team is placed') }
+    await loadMonth(); refresh();
+  })},
+  challenge(arg){ const [date,id] = arg.split('|'); run(async()=>{
+    await q(sb.rpc('challenge', {p_opponent:id, p_day:date}));
+    await loadMatches(); refresh();
+    toast(`Request sent to ${st.teams[id]?.name || 'the team'}`);
+  })},
+  respond(arg){ const [mid, yes] = arg.split('|'); run(async()=>{
+    await q(sb.rpc('respond', {p_match:mid, p_accept: yes==='1'}));
+    await Promise.all([loadMatches(), loadMonth()]);
+    const m = st.matches.find(x=>x.id===mid);
+    if(yes==='1' && m){ ui.sheet=null; refresh(); celebrate(m) } else { toast('Request declined'); refresh() }
+  })},
   cancelMatch(mid){
-    const u = me(), m = u.matches.find(x=>x.id===mid), o = teamById(m.opp);
-    if(!confirm(`Cancel the friendly against ${o.name} on ${nice(m.date)}?`)) return;
-    m.status = 'cancelled';
-    (u.chats[m.opp] ||= {msgs:[]}).msgs.push({from:'sys', text:`Friendly on ${short(m.date)} was cancelled`, t:Date.now()});
-    save(); toast('Friendly cancelled'); refresh();
+    const m = st.matches.find(x=>x.id===mid), o = other(m);
+    const what = m.status==='pending' ? `Withdraw your request to ${o.name}?` : `Cancel the friendly against ${o.name} on ${nice(m.day)}?`;
+    if(!confirm(what)) return;
+    run(async()=>{ await q(sb.rpc('cancel_match', {p_match:mid})); await Promise.all([loadMatches(), loadMonth()]); toast(m.status==='pending'?'Request withdrawn':'Friendly cancelled'); refresh() });
   },
   chat(id){
-    const c = me().chats[id] ||= {msgs:[], unread:false};
-    c.unread = false; save();
-    ui.sheet = {type:'chat', id}; refresh();
-    setTimeout(()=>document.getElementById('msgIn')?.focus(), 50);
+    st.thread = null; ui.sheet = {type:'chat', id}; refresh();
+    run(async()=>{
+      if(!st.teams[id]) remember(await q(sb.from('teams').select('id,name,logo_url,province').eq('id', id).single()));
+      const msgs = await q(sb.from('messages').select('id,sender,recipient,body,created_at')
+        .or(`and(sender.eq.${me()},recipient.eq.${id}),and(sender.eq.${id},recipient.eq.${me()})`)
+        .order('created_at').limit(500));
+      if(ui.sheet?.type!=='chat' || ui.sheet.id!==id) return;
+      st.thread = {id, msgs};
+      await q(sb.rpc('mark_read', {p_from:id}));
+      st.convos.forEach(c=>{ if(c.id===id) c.unread=false });
+      refresh();
+      document.getElementById('msgIn')?.focus();
+    });
   },
-  teamPage(id){ openSheet({type:'team', id}) },
-  result(mid){ res = {my:0, their:0, stars:0, bad:false}; openSheet({type:'result', mid}) },
-  score(arg){ const [k,d] = arg.split('|'); res[k] = Math.max(0, Math.min(30, res[k] + +d)); renderSheet() },
+  teamPage(id){
+    st.teamPage = null; openSheet({type:'team', id});
+    run(async()=>{
+      const t = await q(sb.from('teams').select('id,name,logo_url,province, players(*)').eq('id', id).single());
+      t.players.sort((a,b)=>a.position-b.position);
+      await loadStats([id]);
+      st.teamPage = t; remember({id:t.id, name:t.name, logo_url:t.logo_url, province:t.province});
+      if(ui.sheet?.type==='team' && ui.sheet.id===id) renderSheet();
+    });
+  },
+  result(mid){ res = {my:0, their:0, stars: st.rated.get(mid) || 0, bad:false}; openSheet({type:'result', mid}) },
+  score(arg){ const [k,d] = arg.split('|'); res[k] = Math.max(0, Math.min(99, res[k] + +d)); renderSheet() },
   rate(n){ res.stars = +n; res.bad=false; renderSheet() },
   saveResult(mid){
     if(!res.stars){ res.bad=true; renderSheet(); return }
-    const u = me(), m = u.matches.find(x=>x.id===mid);
-    Object.assign(m, {status:'played', my:res.my, their:res.their, stars:res.stars});
-    u.ratings.push(3 + hash(mid)%3);  // simulated rating from the opponent
-    save(); ui.sheet=null; toast('Result saved'); ui.tab='board'; render();
+    run(async()=>{
+      await q(sb.rpc('submit_result', {p_match:mid, p_my_score:res.my, p_their_score:res.their, p_stars:res.stars}));
+      ui.sheet=null; toast('Saved'); ui.tab='board'; render();
+      await Promise.all([loadMatches(), loadStats([me()]), loadRanking()]); refresh();
+    });
   },
 };
 
 function celebrate(m){
-  const o = teamById(m.opp), t = myTeam();
+  const o = other(m), t = st.team;
   const el = document.createElement('div'); el.className='match-pop';
   el.innerHTML = `<h1>IT'S A MATCH!</h1><div class="vs">${logo(t,84)}<em>VS</em>${logo(o,84)}</div>
-    <p>${esc(t.name)} plays ${esc(o.name)} on ${nice(m.date)}.</p>
+    <p>${esc(t.name)} plays ${esc(o.name)} on ${nice(m.day)}.</p>
     <div class="acts"><button class="btn btn-primary" id="mp-chat">Open chat</button><button class="btn btn-outline" id="mp-close">Back to calendar</button></div>`;
   document.body.appendChild(el);
   const done = () => { el.remove(); document.querySelectorAll('.confetti').forEach(c=>c.remove()) };
   el.querySelector('#mp-close').onclick = done;
-  el.querySelector('#mp-chat').onclick = () => { done(); A.chat(m.opp) };
+  el.querySelector('#mp-chat').onclick = () => { done(); A.chat(o.id) };
   for(let i=0;i<90;i++){
     const c = document.createElement('i'); c.className='confetti';
     c.style.left = Math.random()*100+'vw';
@@ -695,6 +915,7 @@ function celebrate(m){
 /* ================= events ================= */
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]'); if(!el) return;
+  if(busyN && el.dataset.act!=='close' && el.dataset.act!=='backdrop') return;   // ignore double taps while saving
   const fn = A[el.dataset.act]; if(fn) fn(el.dataset.arg, el, e);
 });
 document.addEventListener('input', e => {
@@ -716,39 +937,63 @@ document.addEventListener('submit', e => {
   e.preventDefault();
   const f = e.target.dataset.form;
   if(f==='msg'){
-    const inp = document.getElementById('msgIn'), text = inp.value.trim(); if(!text) return;
-    const id = ui.sheet.id, c = me().chats[id];
-    c.msgs.push({from:'me', text, t:Date.now()}); save(); renderSheet();
-    setTimeout(()=>{
-      if(!db.session) return;
-      const cc = me().chats[id]; if(!cc) return;
-      cc.msgs.push({from:'them', text:REPLIES[(cc.msgs.length + hash(id)) % REPLIES.length], t:Date.now()});
-      const open = ui.sheet?.type==='chat' && ui.sheet.id===id;
-      cc.unread = !open; save();
-      if(open){ renderSheet() } else if(ui.screen==='app'){ refresh() }
-    }, 1400);
+    const inp = document.getElementById('msgIn'), body = inp.value.trim(); if(!body || !st.thread) return;
+    const id = ui.sheet.id; inp.value = '';
+    run(async()=>{
+      const row = await q(sb.from('messages').insert({sender:me(), recipient:id, body}).select('id,sender,recipient,body,created_at').single());
+      if(st.thread?.id===id && !st.thread.msgs.some(x=>x.id===row.id)) st.thread.msgs.push(row);
+      renderSheet(); document.getElementById('msgIn')?.focus();
+      loadChats().catch(()=>{});
+    });
     return;
   }
-  const email = document.getElementById('email'), pw = document.getElementById('pw');
-  const ev = email.value.trim().toLowerCase(), pv = pw.value;
-  const badE = f==='signup' ? !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ev) : !ev;
-  const badP = f==='signup' ? pv.length < 6 : !pv;
+  if(busyN) return;
+  const ev = document.getElementById('email').value.trim().toLowerCase(), pv = document.getElementById('pw').value;
+  const badE = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ev);
+  const badP = f==='signup' ? pv.length < 8 : !pv;
   document.getElementById('f-email').classList.toggle('invalid', badE);
   document.getElementById('f-pw').classList.toggle('invalid', badP);
   const err = e.target.querySelector('.form-error'); err.textContent='';
   if(badE || badP) return;
-  if(f==='login'){
-    const u = db.users[ev];
-    if(!u || u.password !== pv){ err.textContent = 'Wrong email or password.'; return }
-  } else {
-    if(db.users[ev]){ err.textContent = 'There is already an account with this email.'; return }
-    db.users[ev] = {email:ev, password:pv, province:null, team:null, avail:[], matches:[], chats:{}, ratings:[]};
-  }
-  db.session = ev; save(); route();
+  busy(true);
+  (async()=>{
+    try{
+      if(f==='login'){
+        const {data, error} = await sb.auth.signInWithPassword({email:ev, password:pv});
+        if(error) throw error;
+        st.user = data.user;
+      } else {
+        const {data, error} = await sb.auth.signUp({email:ev, password:pv});
+        if(error) throw error;
+        if(!data.session){        // email confirmation is switched on in Supabase
+          ui.info = `We sent a confirmation link to ${ev}. Open it, then log in here.`;
+          ui.err = ''; ui.screen = 'login'; render(); return;
+        }
+        st.user = data.user;
+      }
+      ui.err = ui.info = '';
+      busy(false); await route(); busy(true);
+    }catch(x){ err.textContent = niceErr(x) }
+    finally{ busy(false) }
+  })();
 });
 document.addEventListener('keydown', e => { if(e.key==='Escape' && ui.sheet) A.close() });
+// Coming back to the app (e.g. reopening it on the phone): fetch anything missed while away.
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState==='visible' && ui.screen==='app' && st.team && !busyN)
+    run(async()=>{ await loadAll(); refresh() });
+});
 
-route();
+/* ================= start ================= */
+(async()=>{
+  if(!sb){ route(); return }
+  const {data:{session}} = await sb.auth.getSession();
+  st.user = session?.user || null;
+  sb.auth.onAuthStateChange((event, session) => {
+    if(event==='SIGNED_OUT' && st.user){ resetState(); route() }
+  });
+  route();
+})();
 </script>
 </body>
 </html>
