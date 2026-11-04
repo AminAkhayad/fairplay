@@ -287,7 +287,8 @@ function niceErr(e){
   if(/already registered/i.test(m)) return 'There is already an account with this email.';
   if(/teams_unique_name/.test(m)) return 'A team with this name already exists in this province.';
   if(/Failed to fetch|NetworkError|Load failed/i.test(m)) return 'No connection to the server. Check your internet.';
-  if(/rate limit/i.test(m)) return 'Too many attempts. Wait a minute and try again.';
+  if(/email rate limit/i.test(m)) return 'Too many sign-ups right now (email limit reached). Try again in an hour.';
+  if(/rate limit|too many/i.test(m)) return 'Too many attempts. Wait a few minutes and try again.';
   return m;
 }
 
