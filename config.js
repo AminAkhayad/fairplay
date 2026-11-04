@@ -7,6 +7,6 @@
 // limited by the security rules in supabase/schema.sql.
 // NEVER put the Secret key (sb_secret_...) or the service_role key here.
 window.FAIRPLAY_CONFIG = {
-  url: 'https://YOUR-PROJECT.supabase.co',
+  url: 'https://ruxglpaboaytjykueruu.supabase.co',
   anonKey: 'sb_publishable_DF1PUBsEW54NYlGVYkY_Jw_1LM_-ClV',
 };
