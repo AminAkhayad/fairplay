@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B1F17">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Fair Play</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B1F17; --surface:#11291F; --surface2:#163226; --border:#24443A;
+  --text:#EEF5EF; --muted:#8FA89A; --accent:#C6F432; --accent-ink:#0B1F17;
+  --danger:#FF6B5E; --radius:12px;
+  --cond:'Barlow Condensed',system-ui,sans-serif; --body:'Barlow',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);font-family:var(--body);-webkit-font-smoothing:antialiased}
+body{min-height:100dvh}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+img{display:block}
+.hidden{display:none!important}
+
+/* ---------- layout ---------- */
+.screen{min-height:100dvh;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top) + 28px) 20px calc(env(safe-area-inset-bottom) + 24px);max-width:480px;margin:0 auto}
+.screen.with-nav{padding-bottom:calc(env(safe-area-inset-bottom) + 96px)}
+.push{margin-top:auto}
+.brand{display:flex;align-items:center;gap:8px;font-family:var(--cond);font-weight:800;font-size:19px;letter-spacing:.04em;margin-bottom:28px}
+.brand svg{width:24px;height:24px;color:var(--accent)}
+h1{font-family:var(--body);font-weight:700;font-size:28px;line-height:1.15;letter-spacing:-.01em}
+.lead{color:var(--muted);font-size:14px;line-height:1.45;margin-top:6px}
+.label{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:26px 0 10px}
+
+/* ---------- welcome ---------- */
+.welcome{justify-content:center;text-align:center}
+.welcome .hero{margin:auto 0;display:flex;flex-direction:column;align-items:center}
+.welcome .hero svg{width:84px;height:84px;color:var(--accent)}
+.welcome .hero h1{font-family:var(--cond);font-weight:800;font-size:58px;letter-spacing:.03em;margin-top:18px}
+.welcome .hero p{color:var(--text);opacity:.85;font-size:15px;line-height:1.45;max-width:270px;margin-top:10px}
+
+/* ---------- forms ---------- */
+.field{margin-top:16px}
+.field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+.input{width:100%;height:48px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);padding:0 14px;font-size:15px;outline:none;transition:border-color .15s}
+.input::placeholder{color:#6B8577}
+.input:focus{border-color:var(--accent)}
+.field .msg{display:none;color:var(--danger);font-size:12.5px;margin-top:6px}
+.invalid .input,.input.invalid{border-color:var(--danger)}
+.invalid .msg{display:block}
+.form-error{color:var(--danger);font-size:14px;margin-top:14px;min-height:1px}
+
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:50px;border-radius:10px;font-weight:700;font-size:15px;transition:transform .08s,opacity .15s}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--accent);color:var(--accent-ink)}
+.btn-outline{border:1.5px solid var(--border);color:var(--text)}
+.btn-accent-outline{border:1.5px solid var(--accent);color:var(--accent)}
+.btn-danger{border:1.5px solid rgba(255,107,94,.5);color:var(--danger)}
+.btn+.btn{margin-top:10px}
+.btn-sm{height:36px;width:auto;padding:0 14px;font-size:13px;border-radius:999px}
+.btn svg{width:18px;height:18px}
+
+/* ---------- provinces ---------- */
+.prov{display:flex;align-items:center;gap:14px;width:100%;padding:14px;border-radius:var(--radius);background:var(--surface);border:1.5px solid var(--border);font-weight:700;font-size:15px;text-align:left;margin-bottom:10px;transition:border-color .15s}
+.prov:hover,.prov.on{border-color:var(--accent)}
+.prov .pi{width:32px;height:32px;flex:none}
+.prov .chev{margin-left:auto;width:18px;height:18px;color:var(--muted)}
+
+/* ---------- team form ---------- */
+.logo-up{width:104px;height:104px;border-radius:16px;border:1.5px dashed var(--border);background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;overflow:hidden;position:relative}
+.logo-up.invalid{border-color:var(--danger);color:var(--danger)}
+.logo-up img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.logo-up svg{width:24px;height:24px}
+.player{display:flex;gap:12px;align-items:center;padding:12px;border-radius:var(--radius);background:var(--surface);border:1.5px solid var(--border);margin-bottom:10px;position:relative}
+.player .ph{width:52px;height:52px;border-radius:50%;background:var(--surface2);border:1.5px dashed var(--border);display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer;overflow:hidden;color:var(--muted)}
+.player .ph img{width:100%;height:100%;object-fit:cover}
+.player .ph svg{width:20px;height:20px}
+.player .pf{flex:1;min-width:0}
+.player .pn{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px}
+.player .row{display:flex;gap:8px}
+.player .input{height:40px;font-size:14px;padding:0 10px;min-width:0}
+.player .rm{position:absolute;top:8px;right:10px;color:var(--muted);width:22px;height:22px}
+
+/* ---------- app shell & nav ---------- */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;background:#0E251B;border-top:1px solid var(--border);padding-bottom:env(safe-area-inset-bottom)}
+.nav .nav-brand,.nav .nav-foot{display:none}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 0 10px;font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--muted);position:relative}
+.nav-item svg{width:20px;height:20px}
+.nav-item.on{color:var(--accent)}
+.nav-item.on::before{content:"";position:absolute;top:-1px;left:22%;right:22%;height:3px;border-radius:0 0 3px 3px;background:var(--accent)}
+.nav-item .dot{position:absolute;top:8px;left:calc(50% + 8px);width:8px;height:8px;border-radius:50%;background:var(--danger)}
+
+.topbar{display:flex;align-items:center;gap:10px;margin-bottom:24px}
+.topbar .who{flex:1;min-width:0;text-align:left}
+.topbar .who b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .who span{font-size:12px;color:var(--muted)}
+
+.logo{border-radius:50%;flex:none;overflow:hidden;display:flex;align-items:center;justify-content:center;font-family:var(--cond);font-weight:800;color:#0B1F17;background:var(--accent)}
+.logo img{width:100%;height:100%;object-fit:cover}
+
+/* ---------- calendar ---------- */
+.month{display:flex;align-items:center;justify-content:space-between;margin:22px 0 12px}
+.month b{font-family:var(--cond);font-size:22px;font-weight:700;letter-spacing:.02em}
+.month .arrows{display:flex;gap:6px}
+.icon-btn{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text)}
+.icon-btn:disabled{opacity:.3;cursor:default}
+.icon-btn svg{width:16px;height:16px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:8px 6px}
+.cal .wd{text-align:center;font-size:11px;font-weight:600;color:var(--muted);padding-bottom:4px}
+.day{position:relative;aspect-ratio:1;border-radius:9px;background:var(--surface);border:1.5px solid transparent;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center}
+.day:hover:not(:disabled){border-color:var(--border)}
+.day:disabled{background:transparent;color:#3E5A4D;cursor:default}
+.day.today{color:var(--accent)}
+.day.placed{border:1.5px dashed var(--accent)}
+.day.matched{background:var(--accent);color:var(--accent-ink)}
+.day .cnt{position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--accent);color:var(--accent-ink);font-size:10.5px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg)}
+.day.matched .cnt{display:none}
+.day .ball{position:absolute;bottom:3px;width:5px;height:5px;border-radius:50%;background:var(--accent-ink)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:22px;font-size:12px;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:14px;height:14px;border-radius:4px;display:inline-block}
+
+/* ---------- lists & cards ---------- */
+.card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px}
+.list-row{display:flex;align-items:center;gap:12px;padding:12px;border-radius:var(--radius);background:var(--surface);border:1.5px solid var(--border);margin-bottom:10px;width:100%;text-align:left}
+.list-row .grow{flex:1;min-width:0}
+.list-row .grow b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.list-row .grow small{color:var(--muted);font-size:12.5px}
+.stars{display:inline-flex;gap:2px;vertical-align:middle}
+.stars svg{width:13px;height:13px}
+.empty{color:var(--muted);font-size:14px;padding:18px;text-align:center;border:1.5px dashed var(--border);border-radius:var(--radius)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
+.stat{background:var(--surface2);border-radius:10px;padding:10px 6px;text-align:center}
+.stat b{display:block;font-family:var(--cond);font-size:24px;font-weight:700}
+.stat span{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em}
+.row-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.row-actions .btn{margin-top:0}
+.pill{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--surface2);color:var(--muted)}
+.pill.win{background:rgba(198,244,50,.15);color:var(--accent)}
+.pill.loss{background:rgba(255,107,94,.15);color:var(--danger)}
+
+/* ---------- sheets ---------- */
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(3,10,7,.66);display:flex;align-items:flex-end;justify-content:center;animation:fade .18s}
+.sheet{width:100%;max-width:520px;max-height:88dvh;overflow:auto;background:var(--bg);border:1.5px solid var(--border);border-bottom:0;border-radius:22px 22px 0 0;padding:22px 20px calc(env(safe-area-inset-bottom) + 22px);animation:up .22s cubic-bezier(.2,.8,.2,1)}
+.sheet.full{height:100dvh;max-height:100dvh;border-radius:0;display:flex;flex-direction:column;padding-top:calc(env(safe-area-inset-top) + 16px)}
+.sheet-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.sheet-head h2{flex:1;font-size:20px;font-weight:700}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+@keyframes fade{from{opacity:0}}
+
+/* chat */
+.msgs{flex:1;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:6px 0 12px}
+.bubble{max-width:78%;padding:10px 13px;border-radius:16px;font-size:14.5px;line-height:1.4}
+.bubble.them{background:var(--surface2);align-self:flex-start;border-bottom-left-radius:4px}
+.bubble.me{background:var(--accent);color:var(--accent-ink);align-self:flex-end;border-bottom-right-radius:4px}
+.bubble.sys{align-self:center;background:none;color:var(--muted);font-size:12px;text-align:center}
+.composer{display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--border)}
+.composer .input{border-radius:999px}
+.composer .send{width:48px;height:48px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;flex:none}
+.composer .send svg{width:20px;height:20px}
+
+/* result */
+.score{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin:10px 0}
+.score .side{text-align:center}
+.score .side small{display:block;font-size:12px;color:var(--muted);margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stepper{display:flex;align-items:center;justify-content:center;gap:10px}
+.stepper b{font-family:var(--cond);font-size:44px;font-weight:800;min-width:40px;text-align:center}
+.rate{display:flex;gap:8px;justify-content:center;margin:8px 0 4px}
+.rate button svg{width:36px;height:36px}
+.rate.invalid button svg path{stroke:var(--danger)}
+
+/* match animation */
+.match-pop{position:fixed;inset:0;z-index:60;background:radial-gradient(circle at 50% 40%,#1c4a33,#0B1F17 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;animation:fade .2s}
+.match-pop h1{font-family:var(--cond);font-weight:800;font-size:56px;color:var(--accent);letter-spacing:.03em;animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
+.match-pop .vs{display:flex;align-items:center;gap:18px;margin:26px 0 10px}
+.match-pop .vs .logo{border:3px solid var(--accent);animation:pop .6s .1s both cubic-bezier(.2,1.6,.4,1)}
+.match-pop .vs em{font-family:var(--cond);font-style:normal;font-size:28px;font-weight:800;color:var(--muted)}
+.match-pop p{color:var(--muted);max-width:300px}
+.match-pop .acts{width:100%;max-width:320px;margin-top:30px}
+@keyframes pop{from{transform:scale(.3);opacity:0}}
+.confetti{position:fixed;top:-12px;width:9px;height:14px;z-index:61;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(105vh) rotate(720deg)}}
+
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 92px);transform:translateX(-50%);background:var(--text);color:var(--bg);font-weight:600;font-size:14px;padding:10px 16px;border-radius:999px;z-index:80;animation:up .2s;white-space:nowrap}
+
+.players-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:6px}
+.players-grid div{text-align:center;font-size:12px;color:var(--muted);min-width:0}
+.players-grid .logo{margin:0 auto 6px}
+.players-grid span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- tablet / desktop ---------- */
+@media (min-width:600px){
+  .screen.auth{justify-content:center}
+  .screen.auth .box{background:var(--surface);border:1.5px solid var(--border);border-radius:20px;padding:32px}
+  .screen.auth .push{margin-top:32px}
+  .players-wrap{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+  .overlay{align-items:center}
+  .sheet{border-radius:22px;border-bottom:1.5px solid var(--border)}
+  .sheet.full{height:min(760px,92dvh);max-height:92dvh;border-radius:22px;padding-top:22px}
+}
+@media (min-width:600px) and (max-width:899px){
+  .screen.with-nav{max-width:720px}
+}
+@media (min-width:900px){
+  .nav{top:0;right:auto;width:248px;flex-direction:column;border-top:0;border-right:1px solid var(--border);padding:28px 16px}
+  .nav .nav-brand{display:flex;margin:0 8px 28px}
+  .nav .nav-foot{display:block;margin-top:auto}
+  .nav-item{flex:none;flex-direction:row;gap:12px;padding:12px 14px;border-radius:10px;font-size:13px}
+  .nav-item:hover{background:var(--surface)}
+  .nav-item.on{background:var(--surface)}
+  .nav-item.on::before{top:10px;bottom:10px;left:0;right:auto;width:3px;height:auto;border-radius:0 3px 3px 0}
+  .nav-item .dot{top:14px;left:34px}
+  .screen.with-nav{max-width:none;margin:0 0 0 248px;padding:40px 48px 48px}
+  .with-nav .inner{max-width:1080px}
+  .with-nav .topbar .tb-logout{display:none}
+  .two{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:40px;align-items:start}
+  .day{font-size:16px}
+  .toast{bottom:32px;left:calc(50% + 124px)}
+  .screen.team-edit{max-width:760px}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="layer"></div>
+
+<script>
+/* ================= icons ================= */
+const I = {
+  mark:'<svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="17" stroke="currentColor" stroke-width="3"/><path d="M3 20h34" stroke="currentColor" stroke-width="3"/><circle cx="20" cy="20" r="5.5" fill="currentColor"/></svg>',
+  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+  chat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>',
+  trophy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4M12 14v4M8 21h8"/></svg>',
+  cam:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+  chev:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>',
+  left:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  send:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  minus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg>',
+  logout:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg>',
+};
+const star = (on, big) => `<svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" fill="${on?'#C6F432':'none'}" stroke="${on?'#C6F432':'#4C6B5C'}" stroke-width="${big?1.6:2}" stroke-linejoin="round"/></svg>`;
+const stars = r => `<span class="stars">${[1,2,3,4,5].map(i=>star(i<=Math.round(r))).join('')}</span>`;
+
+/* ================= static data ================= */
+const PROVINCES = [
+  {id:'oost-vlaanderen', name:'Oost-Vlaanderen', pts:'20,30 170,20 190,90 150,180 30,170 10,80',
+   teams:['FC Gentse Leeuwen','Aalst United','Futsal Dendermonde','Eeklo Strikers','Ronse Rovers','Lokeren Stars']},
+  {id:'west-vlaanderen', name:'West-Vlaanderen', pts:'20,40 150,20 180,90 150,180 40,170 10,100',
+   teams:['Brugge Blue Boys','Kortrijk Kickers','Oostende Waves','Roeselare FC','Ieper Eagles','Torhout Titans']},
+  {id:'vlaams-brabant', name:'Vlaams-Brabant', pts:'30,40 170,30 180,120 120,180 20,150',
+   teams:['Leuven Lions','Vilvoorde Vipers','Halle City','Tienen Turbo','Aarschot Arrows','Zaventem Jets']},
+  {id:'antwerpen', name:'Antwerpen', pts:'20,20 180,30 170,170 40,180 10,90',
+   teams:['Antwerp Diamonds','Mechelen Mavericks','Turnhout Tigers','Mol Meteors','Lier Legends','Boom Bulls']},
+  {id:'limburg', name:'Limburg', pts:'40,20 170,40 190,120 150,190 30,170 20,70',
+   teams:['Hasselt Hawks','Genk Miners','Tongeren Titans','Sint-Truiden Sparks','Bree Bandits','Maasmechelen FC']},
+];
+const provIcon = p => `<svg class="pi" viewBox="0 0 200 200"><polygon points="${p.pts}" fill="rgba(198,244,50,.14)" stroke="#C6F432" stroke-width="12" stroke-linejoin="round"/></svg>`;
+const prov = id => PROVINCES.find(p => p.id === id);
+const FIRST = ['Yassin','Lucas','Mehdi','Arne','Noah','Bilal','Jonas','Sami','Wout','Ilias','Milan','Rayan','Senne','Adam','Kobe','Anas'];
+const LAST  = ['Peeters','El Amrani','Janssens','Maes','Bouzid','Claes','Wouters','Aydin','Goossens','Mertens','Benali','De Smet','Vermeulen','Haddad'];
+const COLORS = ['#C6F432','#5EE2A0','#FFB84D','#7CC7FF','#FF8A7A','#C9A8FF'];
+const REPLIES = ['Sounds good to us 👍','Which sporthal do you have in mind?','We can do 20:00 if that works for you.','Great, we\'ll bring the bibs.','Perfect, see you there!','Can we confirm the time tomorrow?'];
+
+function hash(s){let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+const _teams = {};
+function fakeTeams(pid){
+  if(_teams[pid]) return _teams[pid];
+  return _teams[pid] = prov(pid).teams.map((name,i)=>{
+    const id = pid+'-'+i, h = hash(id);
+    const players = Array.from({length:8},(_,k)=>({first:FIRST[hash(id+k)%FIRST.length], last:LAST[hash(id+'l'+k)%LAST.length]}));
+    return {id, name, color:COLORS[i%COLORS.length], rating:3.1+(h%19)/10, w:h%9, d:(h>>3)%4, l:(h>>5)%6, players};
+  });
+}
+
+/* ================= storage ================= */
+const KEY = 'fairplay.v2';
+let db; try{ db = JSON.parse(localStorage.getItem(KEY)) }catch(e){}
+if(!db || !db.users) db = {users:{}, session:null};
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(db)) }catch(e){ toast('Storage full — use smaller photos') } }
+const me = () => db.session ? db.users[db.session] : null;
+
+/* ================= helpers ================= */
+const esc = s => String(s ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2,'0');
+const iso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const todayIso = () => iso(new Date());
+const parse = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d) };
+const nice = (s, opts={weekday:'long',day:'numeric',month:'long'}) => parse(s).toLocaleDateString('en-GB', opts);
+const short = s => nice(s,{weekday:'short',day:'numeric',month:'short'});
+const initials = n => n.split(/\s+/).filter(w=>/[A-Za-z]/.test(w[0])).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+
+function myTeam(){ const u = me(); return {id:'me', name:u.team.name, logo:u.team.logo, players:u.team.players, color:'#C6F432', mine:true} }
+function teamById(id){ return id==='me' ? myTeam() : fakeTeams(me().province).find(t=>t.id===id) || Object.values(_teams).flat().find(t=>t.id===id) }
+function logo(t, size=40){
+  const fs = Math.round(size*.38);
+  return t.logo ? `<span class="logo" style="width:${size}px;height:${size}px"><img src="${t.logo}" alt=""></span>`
+                : `<span class="logo" style="width:${size}px;height:${size}px;font-size:${fs}px;background:${t.color}">${esc(initials(t.name))}</span>`;
+}
+function avatar(p, size=44){
+  return p.photo ? `<span class="logo" style="width:${size}px;height:${size}px"><img src="${p.photo}" alt=""></span>`
+                 : `<span class="logo" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.36)}px;background:var(--surface2);color:var(--muted)">${esc(initials(p.first+' '+p.last))}</span>`;
+}
+function available(t, date){ return date >= todayIso() && hash(t.id+date) % 100 < 38 }
+function activeMatch(date){ return me().matches.find(m => m.date===date && m.status==='scheduled') }
+function teamsOn(date){ return fakeTeams(me().province).filter(t => available(t,date)) }
+function myStats(){
+  const u = me(), played = u.matches.filter(m=>m.status==='played');
+  const w = played.filter(m=>m.my>m.their).length, d = played.filter(m=>m.my===m.their).length;
+  const r = u.ratings.length ? u.ratings.reduce((a,b)=>a+b,0)/u.ratings.length : 0;
+  return {w, d, l:played.length-w-d, played:played.length, rating:r};
+}
+function unread(){ const u=me(); return u ? Object.values(u.chats).some(c=>c.unread) : false }
+
+function readImg(file, size=240){
+  return new Promise((res,rej)=>{
+    const fr = new FileReader();
+    fr.onerror = rej;
+    fr.onload = () => { const img = new Image(); img.onerror = rej; img.onload = () => {
+      const c = document.createElement('canvas'), s = Math.min(img.width,img.height);
+      c.width = c.height = size;
+      c.getContext('2d').drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,size,size);
+      res(c.toDataURL('image/jpeg',.82));
+    }; img.src = fr.result };
+    fr.readAsDataURL(file);
+  });
+}
+let toastT;
+function toast(msg){
+  document.querySelector('.toast')?.remove(); clearTimeout(toastT);
+  const t = document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t);
+  toastT = setTimeout(()=>t.remove(), 2200);
+}
+
+/* ================= state ================= */
+const now = new Date();
+let ui = { screen:'welcome', tab:'calendar', y:now.getFullYear(), m:now.getMonth(), sheet:null, err:'' };
+let draft = null;   // team form draft
+let res = null;     // result form draft
+
+function route(){
+  const u = me();
+  ui.sheet = null;
+  if(!u) ui.screen = 'welcome';
+  else if(!u.province) ui.screen = 'province';
+  else if(!u.team){ newDraft(); ui.screen = 'team' }
+  else ui.screen = 'app';
+  render();
+}
+function newDraft(){
+  const t = me().team;
+  draft = t ? JSON.parse(JSON.stringify(t))
+            : {name:'', logo:null, players:Array.from({length:8},()=>({first:'',last:'',photo:null}))};
+}
+
+/* ================= screens ================= */
+const brand = `<div class="brand">${I.mark}FAIR PLAY</div>`;
+const field = (id,label,type,ph,msg,val='') => `
+  <div class="field" id="f-${id}"><label for="${id}">${label}</label>
+  <input class="input" id="${id}" type="${type}" placeholder="${ph}" value="${esc(val)}" autocomplete="${type==='password'?'current-password':'email'}">
+  <div class="msg">${msg}</div></div>`;
+
+const S = {
+welcome: () => `
+  <div class="screen welcome">
+    <div class="hero">${I.mark}<h1>FAIR PLAY</h1>
+      <p>Official match cancelled? Find a team nearby and play a friendly instead.</p></div>
+    <button class="btn btn-primary" data-act="go" data-arg="login">Get started</button>
+  </div>`,
+
+login: () => `
+  <form class="screen auth" data-form="login" novalidate><div class="box">
+    ${brand}<h1>Welcome back</h1><p class="lead">Log in to find a match near you.</p>
+    ${field('email','Email','email','you@example.com','Enter your email')}
+    ${field('pw','Password','password','Enter your password','Enter your password')}
+    <div class="form-error">${esc(ui.err)}</div>
+    <div class="push">
+      <button class="btn btn-primary" type="submit">Log in</button>
+      <button class="btn btn-outline" type="button" data-act="go" data-arg="signup">Create an account</button>
+    </div></div>
+  </form>`,
+
+signup: () => `
+  <form class="screen auth" data-form="signup" novalidate><div class="box">
+    ${brand}<h1>Join Fair Play</h1><p class="lead">Create an account to find teams nearby.</p>
+    ${field('email','Email','email','you@example.com','Enter a valid email address')}
+    ${field('pw','Password','password','Enter your password','Use at least 6 characters')}
+    <div class="form-error">${esc(ui.err)}</div>
+    <div class="push">
+      <button class="btn btn-primary" type="submit">Create account</button>
+      <button class="btn btn-outline" type="button" data-act="go" data-arg="login">I already have an account</button>
+    </div></div>
+  </form>`,
+
+province: () => `
+  <div class="screen auth"><div class="box">
+    ${brand}<h1>Forfeit? Play a friendly</h1>
+    <p class="lead">Your opponent can't make it. Find another team in your province for the same matchday.</p>
+    <div class="label">Choose your province</div>
+    ${PROVINCES.map(p=>`<button class="prov ${me().province===p.id?'on':''}" data-act="pickProv" data-arg="${p.id}">${provIcon(p)}${p.name}<span class="chev">${I.chev}</span></button>`).join('')}
+    ${me().team ? `<button class="btn btn-outline" style="margin-top:8px" data-act="go" data-arg="app">Cancel</button>` : ''}
+  </div></div>`,
+
+team: () => {
+  const editing = !!me().team;
+  return `
+  <div class="screen team-edit ${editing?'with-nav':''}">${editing?'':brand}
+    <div class="${editing?'inner':''}">
+    <h1>Your team</h1><p class="lead">${prov(me().province).name} · All fields are required</p>
+    <div class="label">Team logo</div>
+    <label class="logo-up" id="logoBox">${draft.logo?`<img src="${draft.logo}" alt="">`:''}${I.cam}Upload
+      <input type="file" accept="image/*" hidden data-file="logo"></label>
+    <div class="field" id="f-tname" style="margin-top:0"><div class="label">Team name</div>
+      <input class="input" id="tname" placeholder="Enter your team name" value="${esc(draft.name)}" data-draft="name" maxlength="40">
+      <div class="msg">Enter your team name</div></div>
+    <div class="label">Players (minimum 8)</div>
+    <div class="players-wrap">${draft.players.map((p,i)=>`
+      <div class="player">
+        <label class="ph">${p.photo?`<img src="${p.photo}" alt="">`:I.cam}<input type="file" accept="image/*" hidden data-file="p${i}"></label>
+        <div class="pf"><div class="pn">Player ${i+1}</div>
+          <div class="row"><input class="input" placeholder="First name" value="${esc(p.first)}" data-draft="${i}.first" data-req>
+          <input class="input" placeholder="Last name" value="${esc(p.last)}" data-draft="${i}.last" data-req></div></div>
+        ${i>=8?`<button class="rm" type="button" data-act="rmPlayer" data-arg="${i}" aria-label="Remove player">${I.x}</button>`:''}
+      </div>`).join('')}</div>
+    ${draft.players.length<14?`<button class="btn btn-accent-outline" data-act="addPlayer">${I.plus}Add player</button>`:''}
+    <div class="form-error" id="teamErr"></div>
+    <button class="btn btn-primary" style="margin-top:6px" data-act="saveTeam">Save team</button>
+    <button class="btn btn-outline" data-act="go" data-arg="province">Change province</button>
+    ${editing?`<button class="btn btn-outline" data-act="go" data-arg="app">Cancel</button>`:''}
+    </div>
+  </div>${editing?nav():''}`;
+},
+
+app: () => `<div class="screen with-nav"><div class="inner">${TABS[ui.tab]()}</div></div>${nav()}`,
+};
+
+function nav(){
+  const u = me(), t = myTeam(), cur = ui.screen==='app' ? ui.tab : '';
+  const item = (id,icon,label) => `<button class="nav-item ${cur===id?'on':''}" data-act="tab" data-arg="${id}">${icon}${label}${id==='chat'&&unread()?'<span class="dot"></span>':''}</button>`;
+  return `<nav class="nav">
+    <div class="brand nav-brand">${I.mark}FAIR PLAY</div>
+    ${item('calendar',I.cal,'CALENDAR')}${item('chat',I.chat,'CHAT')}${item('board',I.trophy,'BOARD')}
+    <div class="nav-foot">
+      <button class="list-row" data-act="teamPage" data-arg="me">${logo(t,36)}<span class="grow"><b>${esc(t.name)}</b><small>${prov(u.province).name}</small></span></button>
+      <button class="btn btn-outline btn-sm" style="width:100%" data-act="logout">${I.logout}Log out</button>
+    </div></nav>`;
+}
+
+function topbar(){
+  const t = myTeam();
+  return `<div class="topbar">
+    <button class="topbar" style="margin:0;flex:1;min-width:0" data-act="teamPage" data-arg="me">${logo(t,36)}
+      <span class="who"><b>${esc(t.name)}</b><span>${prov(me().province).name}</span></span></button>
+    <button class="btn btn-outline btn-sm tb-logout" data-act="logout">Log out</button></div>`;
+}
+
+/* ================= tabs ================= */
+const TABS = {
+calendar: () => {
+  const u = me(), first = new Date(ui.y, ui.m, 1), days = new Date(ui.y, ui.m+1, 0).getDate();
+  const lead = (first.getDay()+6)%7, today = todayIso();
+  const atStart = ui.y===now.getFullYear() && ui.m===now.getMonth();
+  let cells = ['Mo','Tu','We','Th','Fr','Sa','Su'].map(d=>`<div class="wd">${d}</div>`).join('');
+  cells += '<div></div>'.repeat(lead);
+  for(let d=1; d<=days; d++){
+    const ds = iso(new Date(ui.y, ui.m, d)), past = ds < today;
+    const n = past ? 0 : teamsOn(ds).length, match = activeMatch(ds);
+    const cls = ['day', ds===today?'today':'', u.avail.includes(ds)?'placed':'', match?'matched':''].join(' ');
+    cells += `<button class="${cls}" ${past?'disabled':''} data-act="day" data-arg="${ds}" aria-label="${nice(ds)}, ${n} teams available">${d}
+      ${n?`<span class="cnt">${n}</span>`:''}${match?'<span class="ball"></span>':''}</button>`;
+  }
+  const upcoming = u.matches.filter(m=>m.status==='scheduled').sort((a,b)=>a.date.localeCompare(b.date));
+  return `${topbar()}
+  <div class="two"><div>
+    <h1>Pick your matchday</h1>
+    <p class="lead">The day your official match was cancelled. Numbers show teams in ${prov(u.province).name} that are free. A dashed outline marks days where you placed your team.</p>
+    <div class="month"><b>${first.toLocaleDateString('en-GB',{month:'long',year:'numeric'})}</b>
+      <div class="arrows"><button class="icon-btn" data-act="month" data-arg="-1" ${atStart?'disabled':''} aria-label="Previous month">${I.left}</button>
+      <button class="icon-btn" data-act="month" data-arg="1" aria-label="Next month">${I.chev}</button></div></div>
+    <div class="cal">${cells}</div>
+    <div class="legend"><span><i style="background:var(--accent);border-radius:50%"></i>Teams free</span>
+      <span><i style="border:1.5px dashed var(--accent)"></i>Your team placed</span>
+      <span><i style="background:var(--accent)"></i>Friendly planned</span></div>
+  </div><div>
+    <div class="label">Your friendlies</div>
+    ${upcoming.length ? upcoming.map(matchRow).join('') : `<div class="empty">No friendlies planned yet. Tap a day to find an opponent.</div>`}
+  </div></div>`;
+},
+
+chat: () => {
+  const u = me(), ids = Object.keys(u.chats).sort((a,b)=>(u.chats[b].msgs.at(-1)?.t||0)-(u.chats[a].msgs.at(-1)?.t||0));
+  return `${topbar()}<h1>Chat</h1><p class="lead">Arrange time and place with your opponents.</p><div class="label">Conversations</div>
+  ${ids.length ? ids.map(id=>{ const t=teamById(id), c=u.chats[id], last=c.msgs.at(-1);
+    return `<button class="list-row" data-act="chat" data-arg="${id}">${logo(t,44)}<span class="grow"><b>${esc(t.name)}</b>
+      <small>${last?esc((last.from==='me'?'You: ':'')+last.text):''}</small></span>${c.unread?'<span class="pill win">New</span>':''}</button>` }).join('')
+  : `<div class="empty">No conversations yet. Challenge a team on the calendar to start chatting.</div>`}`;
+},
+
+board: () => {
+  const u = me(), s = myStats(), t = myTeam();
+  const scheduled = u.matches.filter(m=>m.status==='scheduled').sort((a,b)=>a.date.localeCompare(b.date));
+  const played = u.matches.filter(m=>m.status==='played').sort((a,b)=>b.date.localeCompare(a.date));
+  const ranking = [...fakeTeams(u.province).map(t=>({t, r:t.rating, n:t.w+t.d+t.l})), {t, r:s.rating, n:s.played}]
+    .sort((a,b)=>b.r-a.r);
+  return `${topbar()}<h1>Friendly board</h1><p class="lead">Results, fair play ratings and teams in ${prov(u.province).name}.</p>
+  <div class="two"><div>
+    <div class="label">Your team</div>
+    <div class="card"><div style="display:flex;gap:12px;align-items:center">${logo(t,52)}<div style="flex:1;min-width:0">
+      <b style="font-size:17px">${esc(t.name)}</b><div style="margin-top:4px">${stars(s.rating)} <small style="color:var(--muted)">${s.rating?s.rating.toFixed(1):'No ratings yet'}</small></div></div></div>
+      <div class="stats"><div class="stat"><b>${s.played}</b><span>Played</span></div><div class="stat"><b>${s.w}</b><span>Won</span></div><div class="stat"><b>${s.d}</b><span>Draw</span></div><div class="stat"><b>${s.l}</b><span>Lost</span></div></div>
+      <div class="row-actions"><button class="btn btn-outline btn-sm" data-act="teamPage" data-arg="me">View team</button><button class="btn btn-outline btn-sm" data-act="editTeam">Edit team</button></div></div>
+    <div class="label">Upcoming friendlies</div>
+    ${scheduled.length ? scheduled.map(matchRow).join('') : `<div class="empty">Nothing planned.</div>`}
+    <div class="label">Results</div>
+    ${played.length ? played.map(m=>{ const o=teamById(m.opp), r=m.my>m.their?'win':m.my<m.their?'loss':'';
+      return `<div class="list-row">${logo(o,40)}<span class="grow"><b>${esc(o.name)}</b><small>${short(m.date)} · you rated ${m.stars}★</small></span>
+        <span class="pill ${r}">${m.my} – ${m.their}</span></div>` }).join('') : `<div class="empty">No results yet.</div>`}
+  </div><div>
+    <div class="label">Fair play ranking</div>
+    ${ranking.map((x,i)=>`<button class="list-row" data-act="teamPage" data-arg="${x.t.id}"><b style="width:18px;color:var(--muted)">${i+1}</b>${logo(x.t,38)}
+      <span class="grow"><b>${esc(x.t.name)}${x.t.mine?' (you)':''}</b><small>${stars(x.r)} ${x.r?x.r.toFixed(1):'–'} · ${x.n} played</small></span></button>`).join('')}
+  </div></div>`;
+},
+};
+
+function matchRow(m){
+  const o = teamById(m.opp);
+  return `<div class="list-row" style="display:block"><div style="display:flex;gap:12px;align-items:center">${logo(o,40)}
+    <span class="grow"><b>${esc(o.name)}</b><small>${nice(m.date)}</small></span></div>
+    <div class="row-actions"><button class="btn btn-outline btn-sm" data-act="chat" data-arg="${m.opp}">Chat</button>
+    <button class="btn btn-outline btn-sm" data-act="result" data-arg="${m.id}">Enter result</button>
+    <button class="btn btn-danger btn-sm" data-act="cancelMatch" data-arg="${m.id}">Cancel</button></div></div>`;
+}
+
+/* ================= sheets ================= */
+const SH = {
+day: ({date}) => {
+  const u = me(), match = activeMatch(date), teams = teamsOn(date), placed = u.avail.includes(date);
+  return `<div class="sheet"><div class="sheet-head"><h2>${nice(date)}</h2><button class="icon-btn" data-act="close" aria-label="Close">${I.x}</button></div>
+    ${match ? `<div class="label" style="margin-top:0">Your friendly</div>${matchRow(match)}` : `
+      <button class="btn ${placed?'btn-outline':'btn-accent-outline'}" data-act="togglePlace" data-arg="${date}">${placed?'Remove my team from this day':'Place my team on this day'}</button>
+      <p class="lead" style="font-size:13px">${placed?'Other teams in your province can see you are free.':'Let other teams know you are looking for a friendly.'}</p>`}
+    <div class="label">${teams.length} team${teams.length===1?'':'s'} available in ${prov(u.province).name}</div>
+    ${teams.length ? teams.map(t=>`<div class="list-row">
+      <button data-act="teamPage" data-arg="${t.id}" style="display:flex;gap:12px;align-items:center;flex:1;min-width:0;text-align:left">${logo(t,42)}
+        <span class="grow"><b>${esc(t.name)}</b><small>${stars(t.rating)} ${t.rating.toFixed(1)}</small></span></button>
+      ${match ? (match.opp===t.id?'<span class="pill win">Your match</span>':'') : `<button class="btn btn-primary btn-sm" data-act="challenge" data-arg="${date}|${t.id}">Challenge</button>`}
+    </div>`).join('') : `<div class="empty">No teams free on this day. Place your team so others can find you.</div>`}
+  </div>`;
+},
+
+team: ({id}) => {
+  const t = teamById(id), mine = id==='me', s = mine ? myStats() : {w:t.w,d:t.d,l:t.l,played:t.w+t.d+t.l,rating:t.rating};
+  return `<div class="sheet"><div class="sheet-head"><h2></h2><button class="icon-btn" data-act="close" aria-label="Close">${I.x}</button></div>
+    <div style="text-align:center">${logo(t,88).replace('class="logo"','class="logo" style="margin:0 auto"')}
+      <h1 style="margin-top:12px">${esc(t.name)}</h1>
+      <p class="lead">${prov(me().province).name}</p>
+      <div style="margin-top:8px">${stars(s.rating)} <small style="color:var(--muted)">${s.rating?s.rating.toFixed(1)+' fair play':'No ratings yet'}</small></div></div>
+    <div class="stats"><div class="stat"><b>${s.played}</b><span>Played</span></div><div class="stat"><b>${s.w}</b><span>Won</span></div><div class="stat"><b>${s.d}</b><span>Draw</span></div><div class="stat"><b>${s.l}</b><span>Lost</span></div></div>
+    <div class="label">Players</div>
+    <div class="players-grid">${t.players.map(p=>`<div>${avatar(p,48)}<span>${esc(p.first)}</span><span>${esc(p.last)}</span></div>`).join('')}</div>
+    ${mine ? `<button class="btn btn-outline" style="margin-top:22px" data-act="editTeam">Edit team</button>` :
+      `<button class="btn btn-outline" style="margin-top:22px" data-act="chat" data-arg="${t.id}">Message team</button>`}
+  </div>`;
+},
+
+chat: ({id}) => {
+  const t = teamById(id), c = me().chats[id] || {msgs:[]};
+  return `<div class="sheet full"><div class="sheet-head"><button class="icon-btn" data-act="close" aria-label="Back">${I.left}</button>
+      ${logo(t,36)}<h2 style="font-size:17px">${esc(t.name)}</h2></div>
+    <div class="msgs" id="msgs">${c.msgs.map(m=>`<div class="bubble ${m.from}">${esc(m.text)}</div>`).join('')}</div>
+    <form class="composer" data-form="msg"><input class="input" id="msgIn" placeholder="Write a message…" autocomplete="off">
+      <button class="send" type="submit" aria-label="Send">${I.send}</button></form></div>`;
+},
+
+result: ({mid}) => {
+  const m = me().matches.find(x=>x.id===mid), o = teamById(m.opp), t = myTeam();
+  const step = k => `<div class="stepper"><button class="icon-btn" data-act="score" data-arg="${k}|-1" aria-label="Minus">${I.minus}</button><b>${res[k]}</b><button class="icon-btn" data-act="score" data-arg="${k}|1" aria-label="Plus">${I.plus}</button></div>`;
+  return `<div class="sheet"><div class="sheet-head"><h2>Enter result</h2><button class="icon-btn" data-act="close" aria-label="Close">${I.x}</button></div>
+    <p class="lead" style="margin-top:-8px">${nice(m.date)}</p>
+    <div class="score"><div class="side">${step('my')}<small>${esc(t.name)}</small></div><b style="color:var(--muted)">–</b><div class="side">${step('their')}<small>${esc(o.name)}</small></div></div>
+    <div class="label" style="text-align:center">Rate ${esc(o.name)}'s fair play</div>
+    <div class="rate ${res.bad?'invalid':''}">${[1,2,3,4,5].map(i=>`<button data-act="rate" data-arg="${i}" aria-label="${i} stars">${star(i<=res.stars,true)}</button>`).join('')}</div>
+    <p class="form-error" style="text-align:center">${res.bad?'Give a rating to save the result':''}</p>
+    <button class="btn btn-primary" style="margin-top:10px" data-act="saveResult" data-arg="${mid}">Save result</button></div>`;
+},
+};
+
+/* ================= render ================= */
+function render(){
+  document.getElementById('app').innerHTML = S[ui.screen]();
+  renderSheet();
+}
+function renderSheet(){
+  const L = document.getElementById('layer');
+  L.innerHTML = ui.sheet ? `<div class="overlay" data-act="backdrop">${SH[ui.sheet.type](ui.sheet)}</div>` : '';
+  const msgs = document.getElementById('msgs'); if(msgs) msgs.scrollTop = msgs.scrollHeight;
+  document.body.style.overflow = ui.sheet ? 'hidden' : '';
+}
+function openSheet(s){ ui.sheet = s; renderSheet() }
+function refresh(){ document.getElementById('app').innerHTML = S[ui.screen](); renderSheet() }
+
+/* ================= actions ================= */
+const A = {
+  go(s){ ui.err=''; if(s==='app'){ route(); return } ui.screen=s; window.scrollTo(0,0); render() },
+  tab(t){ ui.tab=t; ui.screen='app'; ui.sheet=null; window.scrollTo(0,0); render() },
+  logout(){ db.session=null; save(); ui.tab='calendar'; route() },
+  pickProv(id){ me().province=id; save(); if(!me().team){ newDraft(); ui.screen='team'; render() } else { toast('Province changed'); route() } },
+  editTeam(){ newDraft(); ui.sheet=null; ui.screen='team'; window.scrollTo(0,0); render() },
+  addPlayer(){ draft.players.push({first:'',last:'',photo:null}); render() },
+  rmPlayer(i){ draft.players.splice(+i,1); render() },
+  saveTeam(){
+    let first=null;
+    const mark=(el,bad)=>{ el.classList.toggle('invalid',bad); if(bad&&!first) first=el };
+    mark(document.getElementById('logoBox'), !draft.logo);
+    mark(document.getElementById('f-tname'), !draft.name.trim());
+    document.querySelectorAll('[data-req]').forEach(el=>mark(el,!el.value.trim()));
+    if(first){ document.getElementById('teamErr').textContent='Fill in all fields marked in red.'; first.scrollIntoView({behavior:'smooth',block:'center'}); return }
+    draft.name = draft.name.trim();
+    draft.players.forEach(p=>{p.first=p.first.trim(); p.last=p.last.trim()});
+    me().team = draft; save(); toast('Team saved'); ui.tab='calendar'; route();
+  },
+  month(d){ ui.m += +d; if(ui.m<0){ui.m=11;ui.y--} if(ui.m>11){ui.m=0;ui.y++} refresh() },
+  day(date){ openSheet({type:'day', date}) },
+  close(){ ui.sheet=null; renderSheet() },
+  backdrop(_,el,e){ if(e.target===el) A.close() },
+  togglePlace(date){
+    const a = me().avail, i = a.indexOf(date);
+    i>=0 ? a.splice(i,1) : a.push(date); save();
+    toast(i>=0 ? 'Removed from this day' : 'Your team is placed'); refresh();
+  },
+  challenge(arg){
+    const [date,id] = arg.split('|'), u = me();
+    if(activeMatch(date)) return;
+    const m = {id:'m'+Date.now(), date, opp:id, status:'scheduled'};
+    u.matches.push(m);
+    const i = u.avail.indexOf(date); if(i>=0) u.avail.splice(i,1);
+    const c = u.chats[id] ||= {msgs:[], unread:false};
+    c.msgs.push({from:'sys', text:`Friendly planned for ${nice(date)}`, t:Date.now()});
+    c.msgs.push({from:'them', text:`Hi! We're in for ${short(date)} 🙌 Where do you want to play?`, t:Date.now()+1});
+    c.unread = true; save();
+    ui.sheet=null; renderSheet(); refresh(); celebrate(m);
+  },
+  cancelMatch(mid){
+    const u = me(), m = u.matches.find(x=>x.id===mid), o = teamById(m.opp);
+    if(!confirm(`Cancel the friendly against ${o.name} on ${nice(m.date)}?`)) return;
+    m.status = 'cancelled';
+    (u.chats[m.opp] ||= {msgs:[]}).msgs.push({from:'sys', text:`Friendly on ${short(m.date)} was cancelled`, t:Date.now()});
+    save(); toast('Friendly cancelled'); refresh();
+  },
+  chat(id){
+    const c = me().chats[id] ||= {msgs:[], unread:false};
+    c.unread = false; save();
+    ui.sheet = {type:'chat', id}; refresh();
+    setTimeout(()=>document.getElementById('msgIn')?.focus(), 50);
+  },
+  teamPage(id){ openSheet({type:'team', id}) },
+  result(mid){ res = {my:0, their:0, stars:0, bad:false}; openSheet({type:'result', mid}) },
+  score(arg){ const [k,d] = arg.split('|'); res[k] = Math.max(0, Math.min(30, res[k] + +d)); renderSheet() },
+  rate(n){ res.stars = +n; res.bad=false; renderSheet() },
+  saveResult(mid){
+    if(!res.stars){ res.bad=true; renderSheet(); return }
+    const u = me(), m = u.matches.find(x=>x.id===mid);
+    Object.assign(m, {status:'played', my:res.my, their:res.their, stars:res.stars});
+    u.ratings.push(3 + hash(mid)%3);  // simulated rating from the opponent
+    save(); ui.sheet=null; toast('Result saved'); ui.tab='board'; render();
+  },
+};
+
+function celebrate(m){
+  const o = teamById(m.opp), t = myTeam();
+  const el = document.createElement('div'); el.className='match-pop';
+  el.innerHTML = `<h1>IT'S A MATCH!</h1><div class="vs">${logo(t,84)}<em>VS</em>${logo(o,84)}</div>
+    <p>${esc(t.name)} plays ${esc(o.name)} on ${nice(m.date)}.</p>
+    <div class="acts"><button class="btn btn-primary" id="mp-chat">Open chat</button><button class="btn btn-outline" id="mp-close">Back to calendar</button></div>`;
+  document.body.appendChild(el);
+  const done = () => { el.remove(); document.querySelectorAll('.confetti').forEach(c=>c.remove()) };
+  el.querySelector('#mp-close').onclick = done;
+  el.querySelector('#mp-chat').onclick = () => { done(); A.chat(m.opp) };
+  for(let i=0;i<90;i++){
+    const c = document.createElement('i'); c.className='confetti';
+    c.style.left = Math.random()*100+'vw';
+    c.style.background = ['#C6F432','#EEF5EF','#5EE2A0','#FFB84D'][i%4];
+    c.style.animationDuration = (1.6+Math.random()*1.6)+'s';
+    c.style.animationDelay = Math.random()*.5+'s';
+    document.body.appendChild(c); setTimeout(()=>c.remove(), 4000);
+  }
+  try{ navigator.vibrate?.([60,40,120]) }catch(e){}
+}
+
+/* ================= events ================= */
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if(!el) return;
+  const fn = A[el.dataset.act]; if(fn) fn(el.dataset.arg, el, e);
+});
+document.addEventListener('input', e => {
+  const k = e.target.dataset.draft; if(k==null || !draft) return;
+  if(k==='name') draft.name = e.target.value;
+  else { const [i,f] = k.split('.'); draft.players[+i][f] = e.target.value }
+  const holder = e.target.closest('.field') || e.target;
+  if(e.target.value.trim()) holder.classList.remove('invalid');
+});
+document.addEventListener('change', async e => {
+  const k = e.target.dataset.file, file = e.target.files?.[0]; if(!k || !file) return;
+  try{
+    const data = await readImg(file, k==='logo'?320:200);
+    if(k==='logo') draft.logo = data; else draft.players[+k.slice(1)].photo = data;
+    render();
+  }catch(err){ toast('Could not read that image') }
+});
+document.addEventListener('submit', e => {
+  e.preventDefault();
+  const f = e.target.dataset.form;
+  if(f==='msg'){
+    const inp = document.getElementById('msgIn'), text = inp.value.trim(); if(!text) return;
+    const id = ui.sheet.id, c = me().chats[id];
+    c.msgs.push({from:'me', text, t:Date.now()}); save(); renderSheet();
+    setTimeout(()=>{
+      if(!db.session) return;
+      const cc = me().chats[id]; if(!cc) return;
+      cc.msgs.push({from:'them', text:REPLIES[(cc.msgs.length + hash(id)) % REPLIES.length], t:Date.now()});
+      const open = ui.sheet?.type==='chat' && ui.sheet.id===id;
+      cc.unread = !open; save();
+      if(open){ renderSheet() } else if(ui.screen==='app'){ refresh() }
+    }, 1400);
+    return;
+  }
+  const email = document.getElementById('email'), pw = document.getElementById('pw');
+  const ev = email.value.trim().toLowerCase(), pv = pw.value;
+  const badE = f==='signup' ? !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ev) : !ev;
+  const badP = f==='signup' ? pv.length < 6 : !pv;
+  document.getElementById('f-email').classList.toggle('invalid', badE);
+  document.getElementById('f-pw').classList.toggle('invalid', badP);
+  const err = e.target.querySelector('.form-error'); err.textContent='';
+  if(badE || badP) return;
+  if(f==='login'){
+    const u = db.users[ev];
+    if(!u || u.password !== pv){ err.textContent = 'Wrong email or password.'; return }
+  } else {
+    if(db.users[ev]){ err.textContent = 'There is already an account with this email.'; return }
+    db.users[ev] = {email:ev, password:pv, province:null, team:null, avail:[], matches:[], chats:{}, ratings:[]};
+  }
+  db.session = ev; save(); route();
+});
+document.addEventListener('keydown', e => { if(e.key==='Escape' && ui.sheet) A.close() });
+
+route();
+</script>
+</body>
+</html>
