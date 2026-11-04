@@ -5,7 +5,7 @@ Futsal matchmaking: when your official opponent forfeits, find another team in y
 - `index.html` – the web app
 - `config.js` – your Supabase project URL and anon key
 - `supabase/schema.sql` – the database (tables, security rules, functions)
-- `vendor/supabase.js` – Supabase browser library (v2.45.4)
+- `vendor/supabase.js` – Supabase browser library (v2.117.3)
 
 ## How it works
 
@@ -21,8 +21,9 @@ Futsal matchmaking: when your official opponent forfeits, find another team in y
 
 1. Create a free account and a new project at <https://supabase.com> (region: West EU / Frankfurt or Paris).
 2. In the project: **SQL Editor → New query**, paste the whole of `supabase/schema.sql`, click **Run**.
-3. **Project Settings → API**: copy the **Project URL** and the **anon public** key into `config.js`.
-   Never use the `service_role` key in the app.
+3. Copy the **Project URL** (Project Settings → Data API) and the **Publishable key**
+   (Project Settings → API Keys, starts with `sb_publishable_`) into `config.js`.
+   Never use the **Secret key** (`sb_secret_...`) in the app.
 4. **Authentication → URL Configuration**: set **Site URL** to where the app runs
    (e.g. `https://aminakhayad.github.io/fairplay/`), so the email confirmation link opens the app.
 5. Optional while testing: **Authentication → Providers → Email** → turn off *Confirm email*
