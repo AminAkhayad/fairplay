@@ -798,7 +798,7 @@ calendar: () => {
   cells += '<div></div>'.repeat(lead);
   for(let d=1; d<=days; d++){
     const ds = iso(new Date(ui.y, ui.m, d)), past = ds < today;
-    const n = past ? 0 : (st.monthAvail[ds]||[]).filter(levelOk).length, match = myMatchOn(ds);
+    const n = past ? 0 : (st.monthAvail[ds]||[]).filter(levelOk).length + (st.myAvail.has(ds) ? 1 : 0), match = myMatchOn(ds);
     const req = st.matches.some(m => m.day===ds && m.status==='pending');
     const cls = ['day', ds===today?'today':'', st.myAvail.has(ds)?'placed':'', match?'matched':''].join(' ');
     cells += `<button class="${cls}" ${past&&!match?'disabled':''} data-act="day" data-arg="${ds}" aria-label="${nice(ds)}, ${n} teams available">${d}
@@ -807,7 +807,7 @@ calendar: () => {
   return `${topbar()}
   <div class="two"><div>
     <h1>Pick your matchday</h1>
-    <p class="lead">The day your official match was cancelled. Numbers show teams in ${prov(st.team.province).name} that are free. A dashed outline marks days where you placed your team.</p>
+    <p class="lead">The day your official match was cancelled. Numbers show how many teams in ${prov(st.team.province).name} are free, your own team included. A dashed outline marks days where you placed your team.</p>
     <div class="month"><b>${first.toLocaleDateString('en-GB',{month:'long',year:'numeric'})}</b>
       <div class="arrows"><button class="icon-btn" data-act="month" data-arg="-1" ${atStart?'disabled':''} aria-label="Previous month">${I.left}</button>
       <button class="icon-btn" data-act="month" data-arg="1" aria-label="Next month">${I.chev}</button></div></div>
@@ -1009,7 +1009,7 @@ day: ({date}) => {
     ${match ? `<div class="label" style="margin-top:0">Your friendly</div>${matchRow(match)}` : past ? '' : `
       <button class="btn ${placed?'btn-outline':'btn-accent-outline'}" data-act="togglePlace" data-arg="${date}">${placed?'Remove my team from this day':'Place my team on this day'}</button>
       <p class="lead" style="font-size:13px">${placed?'Other teams in your province can see you are free and challenge you.':'Let other teams know you are looking for a friendly.'}</p>`}
-    ${past ? '' : `<div class="label">${teams.length} team${teams.length===1?'':'s'} available in ${prov(st.team.province).name}</div>
+    ${past ? '' : `<div class="label">${teams.length} other team${teams.length===1?'':'s'} available in ${prov(st.team.province).name}</div>
     ${teams.length ? teams.map(t=>{ const s = st.stats[t.id]||{}, p = pendingWith(date, t.id), d = kmLabel(t);
       const btn = match ? '' : !p ? `<button class="btn btn-primary btn-sm" data-act="challenge" data-arg="${date}|${t.id}">Challenge</button>`
         : p.challenger===me() ? `<span class="pill wait">Request sent</span>`
