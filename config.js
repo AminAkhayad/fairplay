@@ -8,5 +8,5 @@
 // NEVER put the Secret key (sb_secret_...) or the service_role key here.
 window.FAIRPLAY_CONFIG = {
   url: 'https://YOUR-PROJECT.supabase.co',
-  anonKey: 'YOUR-PUBLISHABLE-KEY',
+  anonKey: 'sb_publishable_DF1PUBsEW54NYlGVYkY_Jw_1LM_-ClV',
 };
