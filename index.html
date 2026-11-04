@@ -775,7 +775,8 @@ function refresh(){ if(ui.screen==='app' || ui.screen==='team') document.getElem
 async function uploadImage(dataUrl, tag){
   const blob = await (await fetch(dataUrl)).blob();
   const path = `${st.user.id}/${Date.now()}-${tag}-${Math.random().toString(36).slice(2,8)}.jpg`;
-  await q(sb.storage.from('media').upload(path, blob, {contentType:'image/jpeg'}));
+  try{ await q(sb.storage.from('media').upload(path, blob, {contentType:'image/jpeg'})) }
+  catch(e){ throw new Error('Photo upload failed: ' + niceErr(e)) }
   return sb.storage.from('media').getPublicUrl(path).data.publicUrl;
 }
 
