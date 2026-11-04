@@ -264,6 +264,19 @@ textarea.input{height:auto;min-height:84px;padding:12px 14px;resize:vertical;lin
 .leader .who b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .leader .val{font-family:var(--cond);font-size:26px;font-weight:800;color:var(--accent);margin-top:4px}
 .section-gap{height:8px}
+.scorer{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.scorer:last-child{border-bottom:0}
+.scorer .nm{flex:1;min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scorer .stepper b{font-size:22px;min-width:26px}
+.scorer .icon-btn{width:32px;height:32px}
+.scorer .icon-btn:disabled{opacity:.3}
+.top-scorer{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius);background:var(--surface);border:1.5px solid var(--border);margin-bottom:8px}
+.top-scorer .rank{width:18px;color:var(--muted);font-weight:700}
+.top-scorer .grow{flex:1;min-width:0}
+.top-scorer .grow b{display:block;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-scorer .grow small{color:var(--muted);font-size:12px}
+.top-scorer .g{font-family:var(--cond);font-size:24px;font-weight:800;color:var(--accent)}
+.players-grid .goals{color:var(--accent);font-weight:700}
 .danger-zone{margin-top:28px;padding-top:18px;border-top:1px solid var(--border)}
 .nav-item .cnt-dot{position:absolute;top:6px;left:calc(50% + 6px);min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#FFB84D;color:#0B1F17;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;letter-spacing:0}
 @media (min-width:900px){ .nav-item .cnt-dot{top:12px;left:32px} }
@@ -541,7 +554,9 @@ async function loadRanking(){
   await loadStats(teams.map(t => t.id));
   st.ranking = teams.map(t => t.id);
   const s = season();
-  st.season = await q(sb.rpc('season_stats', {p_province: st.team.province, p_from: s.from, p_to: s.to}));
+  [st.season, st.scorers] = await Promise.all([
+    q(sb.rpc('season_stats', {p_province: st.team.province, p_from: s.from, p_to: s.to})),
+    q(sb.rpc('season_scorers', {p_province: st.team.province, p_from: s.from, p_to: s.to, p_limit: 10}))]);
 }
 
 function subscribe(){
@@ -873,7 +888,12 @@ function seasonBlock(){
   return `<div class="leaders">${L.map(([label, r, val]) => `<div class="leader"><small>${label}</small>
       ${r ? `<button class="who" data-act="teamPage" data-arg="${r.team_id}">${logo({name:r.name, logo_url:r.logo_url},26)}<b>${esc(r.name)}</b></button><div class="val">${esc(val(r))}</div>`
           : `<div class="hint" style="margin-top:10px">${label==='Best fair play' ? 'Needs a team with 3+ ratings' : 'Nobody yet'}</div>`}</div>`).join('')}</div>
-    ${mine ? `<p class="hint" style="margin-top:10px">Your season: ${mine.played} played · ${mine.won}W ${mine.drawn}D ${mine.lost}L · goals ${mine.goals_for}–${mine.goals_against}</p>` : ''}`;
+    ${mine ? `<p class="hint" style="margin-top:10px">Your season: ${mine.played} played · ${mine.won}W ${mine.drawn}D ${mine.lost}L · goals ${mine.goals_for}–${mine.goals_against}</p>` : ''}
+    <div class="label">Top scorers</div>
+    ${(st.scorers||[]).length ? st.scorers.map((r,i)=>`<button class="top-scorer" style="width:100%;text-align:left" data-act="teamPage" data-arg="${r.team_id}"><span class="rank">${i+1}</span>
+        ${avatar({photo_url:r.photo_url, first_name:r.player_name, last_name:''},36)}
+        <span class="grow"><b>${esc(r.player_name)}</b><small>${esc(r.team_name)}</small></span><span class="g">${r.goals}</span></button>`).join('')
+      : `<div class="empty">No goals entered yet. Add your scorers when you enter a result.</div>`}`;
 }
 
 function notifBanner(){
@@ -936,7 +956,7 @@ function resultRow(m){
   }
   const [my, th] = myScore(m), r = my>th?'win':my<th?'loss':'', given = st.rated.get(m.id);
   return `<div class="list-row">${logo(o,40)}<span class="grow"><b>${esc(o.name)}</b><small>${short(m.day)} · ${given?`you rated ${given}★`:'not rated yet'}</small></span>
-    ${given?'':`<button class="btn btn-primary btn-sm" data-act="result" data-arg="${m.id}">Rate</button>`}
+    <button class="btn ${given?'btn-outline':'btn-primary'} btn-sm" data-act="result" data-arg="${m.id}">${given?'Scorers':'Rate'}</button>
     <span class="pill ${r}">${my} – ${th}</span></div>`;
 }
 function callCard(c){
@@ -1047,7 +1067,7 @@ team: ({id}) => {
       ${t.hall_address ? `<div class="meta" style="justify-content:center">${I.pin.replace('<svg','<svg style="width:13px;height:13px;vertical-align:-2px"')} ${mapsLink(t.hall_address)}</div>` : ''}</div>
     ${statsGrid(s)}
     <div class="label">Players</div>
-    <div class="players-grid">${t.players.map(p=>`<div>${avatar(p,48)}<span>${esc(p.first_name)}</span><span>${esc(p.last_name)}</span></div>`).join('')}</div>
+    <div class="players-grid">${t.players.map(p=>`<div>${avatar(p,48)}<span>${esc(p.first_name)}</span><span>${esc(p.last_name)}</span>${t.goals?.[p.id]?`<span class="goals">⚽ ${t.goals[p.id]}</span>`:''}</div>`).join('')}</div>
     ${mine ? `
       <button class="btn btn-outline" style="margin-top:22px" data-act="editTeam">Edit team</button>
       <button class="btn btn-outline" data-act="shareTeam" data-arg="${t.id}">${I.wa}Share via WhatsApp</button>
@@ -1095,10 +1115,22 @@ result: ({mid}) => {
     <div class="label" style="text-align:center">Rate ${esc(o.name)}'s fair play</div>
     <div class="rate ${res.bad?'invalid':''}">${[1,2,3,4,5].map(i=>`<button data-act="rate" data-arg="${i}" aria-label="${i} stars">${star(i<=res.stars,true)}</button>`).join('')}</div>
     <p class="form-error" style="text-align:center">${res.bad?'Give a rating to save':''}</p>
-    <button class="btn btn-primary" style="margin-top:10px" data-act="saveResult" data-arg="${mid}">${mode==='confirm'?'Confirm score':'Save'}</button>
+    ${scorersForm(mode==='enter' ? res.my : sm)}
+    <button class="btn btn-primary" style="margin-top:14px" data-act="saveResult" data-arg="${mid}">${mode==='confirm'?'Confirm score':'Save'}</button>
     ${mode==='confirm' ? `<button class="btn btn-danger" data-act="disputeResult" data-arg="${mid}">Score is wrong</button>` : ''}</div>`;
 },
 };
+
+function scorersForm(myGoals){
+  if(!res.scorers) return `<div class="hint" style="text-align:center">Loading scorers…</div>`;
+  const total = Object.values(res.scorers).reduce((a,b)=>a+b,0);
+  if(!myGoals) return '';
+  return `<div class="label" style="margin-top:22px">Your scorers <span style="text-transform:none;letter-spacing:0;font-weight:600">· optional · ${total} of ${myGoals} goal${myGoals===1?'':'s'}</span></div>
+    <div class="card" style="padding:4px 14px">${st.team.players.map(p => { const n = res.scorers[p.id] || 0; return `<div class="scorer">${avatar(p,32)}
+      <span class="nm">${esc(p.first_name)} ${esc(p.last_name)}</span>
+      <div class="stepper"><button class="icon-btn" data-act="goal" data-arg="${p.id}|-1" ${n?'':'disabled'} aria-label="Minus">${I.minus}</button><b>${n}</b>
+      <button class="icon-btn" data-act="goal" data-arg="${p.id}|1" ${total>=myGoals?'disabled':''} aria-label="Plus">${I.plus}</button></div></div>` }).join('')}</div>`;
+}
 
 /* ================= render ================= */
 function render(){
@@ -1269,7 +1301,11 @@ const A = {
     run(async()=>{
       const t = await q(sb.from('teams').select(`${TCOLS}, players(*)`).eq('id', id).single());
       t.players.sort((a,b)=>a.position-b.position);
-      await loadStats([id]);
+      const sea = season();
+      const [, g] = await Promise.all([loadStats([id]),
+        q(sb.from('goals').select('player_id, goals, match:matches!inner(status,day)').eq('team_id', id)
+          .eq('match.status', 'played').gte('match.day', sea.from).lte('match.day', sea.to))]);
+      t.goals = {}; g.forEach(r => { if(r.player_id) t.goals[r.player_id] = (t.goals[r.player_id]||0) + r.goals });
       st.teamPage = t; remember({...t, players:undefined});
       if(ui.sheet?.type==='team' && ui.sheet.id===id) renderSheet();
     });
@@ -1309,8 +1345,25 @@ const A = {
     const c = st.calls.find(x=>x.id===id), t = st.teams[c.team_id];
     shareWA(`${t.name} is looking for a futsal friendly on ${nice(c.day)}${c.kickoff?' at '+hhmm(c.kickoff):''}${c.has_hall&&c.venue?' in '+c.venue:''}. Interested? ${appUrl()}#call=${id}`);
   },
-  result(mid){ res = {my:0, their:0, stars: st.rated.get(mid) || 0, bad:false}; openSheet({type:'result', mid}) },
-  score(arg){ const [k,d] = arg.split('|'); res[k] = Math.max(0, Math.min(99, res[k] + +d)); renderSheet() },
+  result(mid){
+    const m = st.matches.find(x=>x.id===mid);
+    res = {my:0, their:0, stars: st.rated.get(mid) || 0, bad:false, scorers: m.status==='accepted' ? {} : null};
+    openSheet({type:'result', mid});
+    if(!res.scorers) run(async()=>{
+      const rows = await q(sb.from('goals').select('player_id,goals').eq('match_id', mid).eq('team_id', me()));
+      res.scorers = {}; rows.forEach(r => { if(r.player_id) res.scorers[r.player_id] = r.goals });
+      if(ui.sheet?.type==='result' && ui.sheet.mid===mid) renderSheet();
+    });
+  },
+  score(arg){
+    const [k,d] = arg.split('|'); res[k] = Math.max(0, Math.min(99, res[k] + +d));
+    if(k==='my'){ // never more scorers than goals
+      let over = Object.values(res.scorers||{}).reduce((a,b)=>a+b,0) - res.my;
+      for(const id of Object.keys(res.scorers||{}).reverse()){ while(over>0 && res.scorers[id]>0){ res.scorers[id]--; over-- } }
+    }
+    renderSheet();
+  },
+  goal(arg){ const [id,d] = arg.split('|'); res.scorers[id] = Math.max(0, (res.scorers[id]||0) + +d); if(!res.scorers[id]) delete res.scorers[id]; renderSheet() },
   rate(n){ res.stars = +n; res.bad=false; renderSheet() },
   saveResult(mid){
     if(!res.stars){ res.bad=true; renderSheet(); return }
@@ -1318,6 +1371,10 @@ const A = {
     run(async()=>{
       if(m.status==='result_pending') await q(sb.rpc('confirm_result', {p_match:mid, p_stars:res.stars}));
       else await q(sb.rpc('submit_result', {p_match:mid, p_my_score:res.my, p_their_score:res.their, p_stars:res.stars}));
+      if(res.scorers){
+        const list = Object.entries(res.scorers).filter(([,n])=>n>0).map(([player_id, goals])=>({player_id, goals}));
+        await q(sb.rpc('set_scorers', {p_match:mid, p_scorers:list}));
+      }
       ui.sheet=null;
       toast(m.status==='result_pending' ? 'Score confirmed' : m.status==='played' ? 'Rating saved' : `Score sent — ${other(m).name} will confirm it`);
       await loadMatches();

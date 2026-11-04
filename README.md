@@ -18,7 +18,8 @@ Futsal matchmaking: when your official opponent forfeits, find another team in y
   OpenStreetMap (free, no key) so teams are sorted by distance.
 - **Chat** is live between the two teams (Supabase Realtime), with browser notifications while the app is open.
 - **Results**: one team enters the score, the other confirms or disputes it. No-shows can be reported.
-- **Badges** (Fair play, Reliable, Veteran) and a **season overview** (1 Sept – 31 Aug) on the board.
+- **Badges** (Fair play, Reliable, Veteran) and a **season overview** (1 Sept – 31 Aug) on the board,
+  including **top scorers**: each team enters its own scorers; goals count once both teams confirmed the score.
 - **Account**: forgot password, change password, delete account (from your own team page).
 - After the match day, either team enters the **score**; both teams give each other a **fair play rating** (1–5 stars).
 - Security is enforced in the database (Row Level Security): you can only edit your own team, only read

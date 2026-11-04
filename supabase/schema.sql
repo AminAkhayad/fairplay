@@ -113,6 +113,20 @@ create table if not exists public.messages (
 create index if not exists messages_pair on public.messages (sender, recipient, created_at);
 create index if not exists messages_inbox on public.messages (recipient, read_at);
 
+-- Goals per player, entered by each team for its own players.
+-- player_name is a copy, so the record stays right if the squad changes later.
+create table if not exists public.goals (
+  id          bigint generated always as identity primary key,
+  match_id    uuid not null references public.matches(id) on delete cascade,
+  team_id     uuid not null references public.teams(id) on delete cascade,
+  player_id   uuid references public.players(id) on delete set null,
+  player_name text not null,
+  goals       smallint not null check (goals between 1 and 99),
+  unique (match_id, player_id)
+);
+create index if not exists goals_team on public.goals (team_id);
+create index if not exists goals_match on public.goals (match_id);
+
 -- ---------- helper ----------------------------------------------------
 
 -- The team owned by the logged-in user (null when they have none yet).
@@ -231,6 +245,11 @@ create policy matches_read on public.matches for select to authenticated
   using (public.my_team() in (challenger, opponent) or status = 'played');
 
 -- ratings: readable by all logged-in users (used for the average)
+-- goals: readable by all logged-in users (season top scorers); written only via set_scorers()
+alter table public.goals enable row level security;
+drop policy if exists goals_read on public.goals;
+create policy goals_read on public.goals for select to authenticated using (true);
+
 drop policy if exists ratings_read on public.ratings;
 create policy ratings_read on public.ratings for select to authenticated using (true);
 
@@ -377,6 +396,7 @@ begin
       challenger_score = case when m.challenger = me then p_my_score else p_their_score end,
       opponent_score   = case when m.challenger = me then p_their_score else p_my_score end
     where id = p_match;
+    delete from goals where match_id = p_match;   -- score (re)entered: scorers are entered again after it
   elsif m.status = 'result_pending' then
     raise exception 'The other team already entered a score. Confirm or dispute it.';
   elsif m.status <> 'played' then
@@ -411,6 +431,7 @@ begin
   if m.status <> 'result_pending' or m.result_by = me then raise exception 'There is no score to dispute'; end if;
   update matches set status = 'accepted', result_by = null, challenger_score = null, opponent_score = null
     where id = p_match;
+  delete from goals where match_id = p_match;
 end $$;
 
 -- The other team did not turn up.
@@ -426,6 +447,46 @@ begin
     no_show = case when m.challenger = me then m.opponent else m.challenger end
   where id = p_match;
 end $$;
+
+-- Save who scored for your team in a match: [{"player_id": "...", "goals": 2}, ...]
+-- Replaces what you entered before. Total may not exceed your team's score.
+create or replace function public.set_scorers(p_match uuid, p_scorers jsonb) returns void
+language plpgsql security definer set search_path = public as $$
+declare me uuid := public.my_team(); m matches; my_score int; total int;
+begin
+  select * into m from matches where id = p_match for update;
+  if m.id is null or me not in (m.challenger, m.opponent) then raise exception 'Match not found'; end if;
+  if m.status not in ('result_pending','played') then raise exception 'Enter the score first'; end if;
+  my_score := case when m.challenger = me then m.challenger_score else m.opponent_score end;
+  if jsonb_typeof(p_scorers) <> 'array' then raise exception 'Invalid scorers'; end if;
+  if exists (select 1 from jsonb_array_elements(p_scorers) e
+             where not exists (select 1 from players pl where pl.id = (e->>'player_id')::uuid and pl.team_id = me)) then
+    raise exception 'You can only add players of your own team';
+  end if;
+  select coalesce(sum((e->>'goals')::int), 0) into total from jsonb_array_elements(p_scorers) e;
+  if total > my_score then raise exception 'You entered % goals for players, but your team scored %', total, my_score; end if;
+  delete from goals where match_id = p_match and team_id = me;
+  insert into goals (match_id, team_id, player_id, player_name, goals)
+    select p_match, me, pl.id, pl.first_name || ' ' || pl.last_name, (e->>'goals')::int
+    from jsonb_array_elements(p_scorers) e join players pl on pl.id = (e->>'player_id')::uuid
+    where (e->>'goals')::int > 0;
+end $$;
+
+-- Top scorers of a province in a season (only matches confirmed by both teams).
+create or replace function public.season_scorers(p_province text, p_from date, p_to date, p_limit int default 10)
+returns table (player_id uuid, player_name text, photo_url text, team_id uuid, team_name text, team_logo text, goals int)
+language sql stable security definer set search_path = public as $$
+  select g.player_id, coalesce(pl.first_name || ' ' || pl.last_name, g.player_name), pl.photo_url,
+         t.id, t.name, t.logo_url, sum(g.goals)::int
+  from goals g
+  join matches m on m.id = g.match_id and m.status = 'played' and m.day between p_from and p_to
+  join teams t on t.id = g.team_id and t.province = p_province
+  left join players pl on pl.id = g.player_id
+  where auth.uid() is not null
+  group by g.player_id, coalesce(pl.first_name || ' ' || pl.last_name, g.player_name), pl.photo_url, t.id, t.name, t.logo_url
+  order by sum(g.goals) desc, 2
+  limit least(greatest(p_limit, 1), 50)
+$$;
 
 -- Mark the messages another team sent you as read.
 create or replace function public.mark_read(p_from uuid) returns void
@@ -458,7 +519,9 @@ begin
     'public.report_no_show(uuid)',
     'public.mark_read(uuid)',
     'public.delete_my_account()',
-    'public.season_stats(text, date, date)']
+    'public.season_stats(text, date, date)',
+    'public.set_scorers(uuid, jsonb)',
+    'public.season_scorers(text, date, date, int)']
   loop
     execute format('revoke execute on function %s from public, anon', f);
     execute format('grant execute on function %s to authenticated', f);
