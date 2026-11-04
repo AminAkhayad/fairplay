@@ -3,7 +3,7 @@
 Futsal matchmaking: when your official opponent forfeits, find another team in your province for a friendly.
 
 - `index.html` – the web app
-- `config.js` – your Supabase project URL and anon key
+- `config.js` – your Supabase project URL and publishable key
 - `supabase/schema.sql` – the database (tables, security rules, functions)
 - `vendor/supabase.js` – Supabase browser library (v2.117.3)
 
