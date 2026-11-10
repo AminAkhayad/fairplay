@@ -130,13 +130,41 @@ create table if not exists public.goals (
 create index if not exists goals_team on public.goals (team_id);
 create index if not exists goals_match on public.goals (match_id);
 
--- Platform admins (see the admin page). Add yourself once in the SQL editor:
---   insert into public.admins (user_id) select id from auth.users where email = 'you@example.com';
+-- One row per account, with its email and an admin switch (0 = normal user, 1 = admin).
+-- Make someone admin: Supabase → Table Editor → profiles → set is_admin to 1 on their row.
+-- Users can read only their own row and can never change it themselves.
+create table if not exists public.profiles (
+  id          uuid primary key references auth.users(id) on delete cascade,
+  email       text,
+  is_admin    smallint not null default 0 check (is_admin in (0, 1)),
+  created_at  timestamptz not null default now()
+);
+alter table public.profiles enable row level security;
+drop policy if exists profiles_read_own on public.profiles;
+create policy profiles_read_own on public.profiles for select to authenticated using (id = auth.uid());
+
+-- every new account gets a profile automatically
+create or replace function public.handle_new_user() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.profiles (id, email) values (new.id, new.email)
+    on conflict (id) do update set email = excluded.email;
+  return new;
+end $$;
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created after insert or update of email on auth.users
+  for each row execute function public.handle_new_user();
+
+-- accounts that already existed
+insert into public.profiles (id, email) select id, email from auth.users
+  on conflict (id) do update set email = excluded.email;
+
+-- (older versions used a separate admins table; it still counts if it exists)
 create table if not exists public.admins (
   user_id     uuid primary key references auth.users(id) on delete cascade,
   created_at  timestamptz not null default now()
 );
-alter table public.admins enable row level security;   -- no policies: only readable through is_admin()
+alter table public.admins enable row level security;
 
 -- ---------- helper ----------------------------------------------------
 
@@ -536,7 +564,8 @@ $$;
 
 create or replace function public.is_admin() returns boolean
 language sql stable security definer set search_path = public as $$
-  select exists (select 1 from public.admins where user_id = auth.uid())
+  select exists (select 1 from public.profiles where id = auth.uid() and is_admin = 1)
+      or exists (select 1 from public.admins where user_id = auth.uid())
 $$;
 
 -- Overview for the admin page. "Bookings" = friendlies that went ahead

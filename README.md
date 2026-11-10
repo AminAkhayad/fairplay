@@ -29,8 +29,8 @@ Futsal matchmaking: when your official opponent forfeits, find another team in y
 - **Fair Play matches**: when a team picks one of several teams that asked to play it on a day, the teams
   that were not chosen are paired with each other (both must accept).
 - **Admin page** (platform admins only): bookings per month, busiest days and kick-off times, popular halls,
-  provinces, levels, most active teams and key rates. Make yourself admin once in the SQL editor:
-  `insert into public.admins (user_id) select id from auth.users where email = 'you@example.com';`
+  provinces, levels, most active teams and key rates. To make someone admin: Supabase →
+  Table Editor → `profiles` → set `is_admin` to 1 on their row (0 = normal user).
 
 ## Setup (one time, ~10 minutes)
 
