@@ -46,3 +46,21 @@ Futsal matchmaking: when your official opponent forfeits, find another team in y
    so new accounts can log in immediately.
 
 Note: free Supabase projects pause after a week without activity; you can resume them from the dashboard.
+
+## Push notifications (optional)
+
+Phones get a notification for challenges, matches, Fair Play matches, scores and chat messages,
+also when the app is closed. Android: works in Chrome. iPhone: only after "Add to Home Screen" (iOS 16.4+).
+
+1. Run the latest `supabase/schema.sql` (creates `push_subscriptions`).
+2. Supabase → **Edge Functions** → Deploy a new function → **Via Editor** → name it `notify`,
+   paste `supabase/functions/notify/index.ts`, deploy. In the function's settings, turn **off**
+   "Enforce JWT verification" (the function checks its own secret instead).
+3. Edge Functions → **Secrets**: add `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`
+   (e.g. `mailto:you@example.com`) and `WEBHOOK_SECRET` (a long random string). The public key
+   must match `vapidPublicKey` in `config.js`. Never commit the private key or the webhook secret.
+4. Database → **Webhooks** → create two webhooks, both of type *Supabase Edge Functions* → `notify`,
+   method POST, with HTTP header `x-webhook-secret: <WEBHOOK_SECRET>`:
+   - table `matches`, events Insert + Update
+   - table `messages`, event Insert
+

@@ -485,6 +485,33 @@ function notify(title, body, tag){
   if(swReg?.showNotification) swReg.showNotification(title, opts).catch(()=>{});
   else try{ const n = new Notification(title, opts); n.onclick = () => { window.focus(); n.close() } }catch(e){}
 }
+/* push: lets the phone show notifications even when Fair Play is closed */
+const pushReady = () => !!(CFG.vapidPublicKey && 'serviceWorker' in navigator && 'PushManager' in window && location.protocol === 'https:');
+const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent);
+const isStandalone = () => window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone === true;
+function b64ToBytes(b64){
+  const s = atob((b64 + '='.repeat((4 - b64.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from(s, c => c.charCodeAt(0));
+}
+async function savePush(){
+  if(!pushReady() || !st.user || Notification.permission !== 'granted') return false;
+  try{
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if(!sub) sub = await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:b64ToBytes(CFG.vapidPublicKey)});
+    const j = sub.toJSON();
+    await q(sb.rpc('save_push_subscription', {p_endpoint:j.endpoint, p_p256dh:j.keys.p256dh, p_auth:j.keys.auth}));
+    return true;
+  }catch(e){ console.warn('push subscribe failed', e); return false }
+}
+async function removePush(){
+  if(!pushReady()) return;
+  try{
+    const sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription();
+    if(sub){ await sb.rpc('remove_push_subscription', {p_endpoint:sub.endpoint}); await sub.unsubscribe() }
+  }catch(e){}
+}
+
 function updateTitle(){
   const n = st?.team ? unreadCount() + incoming().length : 0;
   document.title = (n ? `(${n}) ` : '') + 'Fair Play';
@@ -676,6 +703,7 @@ async function route(){
     }
     await loadAll();
     st.isAdmin = await sb.rpc('is_admin').then(r => r.data === true, () => false);
+    savePush();   // no await: never block the start of the app
     subscribe();
     ui.screen = 'app';
   });
@@ -1038,9 +1066,11 @@ function seasonBlock(){
 }
 
 function notifBanner(){
-  if(!notifSupported()) return '';
-  if(Notification.permission !== 'default') return '';
-  return `<div class="banner"><span class="grow">Get a notification for new messages and challenges while Fair Play is open in your browser.</span>
+  if(!(isIOS() && !isStandalone())){
+    if(!notifSupported()) return '';
+    if(Notification.permission !== 'default') return '';
+  }
+  return `<div class="banner"><span class="grow">Get a notification on your phone for challenges, matches and messages — also when Fair Play is closed.${isIOS() && !isStandalone() ? ' On iPhone: first add Fair Play to your home screen.' : ''}</span>
     <button class="btn btn-primary btn-sm" data-act="enableNotif">Turn on</button></div>`;
 }
 
@@ -1201,8 +1231,9 @@ team: ({id}) => {
   const t = st.teamPage?.id === id ? st.teamPage : null;
   if(!t) return `<div class="sheet"><div class="empty">Loading…</div></div>`;
   const mine = id===me(), s = st.stats[id] || {}, d = mine ? '' : kmLabel(t);
-  const notif = !notifSupported() ? 'Not supported here. On iPhone: add Fair Play to your home screen first.'
-    : Notification.permission === 'granted' ? 'On — you get a notification while Fair Play is open in a tab.'
+  const notif = isIOS() && !isStandalone() ? 'On iPhone: tap Share → "Add to Home Screen" and open Fair Play from that icon to turn on notifications.'
+    : !notifSupported() ? 'Not supported in this browser.'
+    : Notification.permission === 'granted' ? (pushReady() ? 'On — also when Fair Play is closed.' : 'On — while Fair Play is open.')
     : Notification.permission === 'denied' ? 'Blocked — allow notifications for this site in your browser settings.' : '';
   return `<div class="sheet"><div class="sheet-head"><h2></h2>${closeBtn}</div>
     <div style="text-align:center"><div style="display:flex;justify-content:center">${logo(t,88)}</div>
@@ -1219,7 +1250,7 @@ team: ({id}) => {
       <button class="btn btn-outline" data-act="shareTeam" data-arg="${t.id}">${I.wa}Share via WhatsApp</button>
       <div class="label">Account</div>
       <p class="hint" style="margin:-4px 0 10px">${esc(st.user.email)}</p>
-      ${notifSupported() && Notification.permission==='default' ? `<button class="btn btn-outline" data-act="enableNotif">Turn on notifications</button>` : `<p class="hint">Notifications: ${notif}</p>`}
+      ${(notifSupported() && Notification.permission==='default') || (isIOS() && !isStandalone()) ? `<button class="btn btn-outline" data-act="enableNotif">Turn on notifications</button><p class="hint">${notif}</p>` : `<p class="hint">Notifications: ${notif}</p>`}
       <button class="btn btn-outline" style="margin-top:10px" data-act="changePw">Change password</button>
       <button class="btn btn-outline" data-act="logout">${I.logout}Log out</button>
       <div class="danger-zone"><button class="btn btn-danger" data-act="deleteAccount">Delete account</button>
@@ -1325,6 +1356,7 @@ const A = {
   adminMonths(v){ ui.adminMonths = +v; run(async()=>{ await loadAdmin(); refresh() }) },
   logout(){ run(async()=>{
     if(channel){ sb.removeChannel(channel); channel=null }
+    await removePush();
     st.user = null;
     await sb.auth.signOut();
     resetState(); ui.tab='calendar'; ui.info=''; ui.err='';
@@ -1537,9 +1569,12 @@ const A = {
     run(async()=>{ await q(sb.rpc('dispute_result', {p_match:mid})); ui.sheet=null; await loadMatches(); refresh(); toast('Score rejected') });
   },
   enableNotif(){
-    if(!notifSupported()) return toast('Notifications are not supported here. On iPhone: add Fair Play to your home screen first.', true);
-    Notification.requestPermission().then(p => {
-      toast(p==='granted' ? 'Notifications are on' : 'Notifications are blocked — allow them in your browser settings', p!=='granted');
+    if(isIOS() && !isStandalone()) return toast('On iPhone: tap Share → "Add to Home Screen", open Fair Play from that icon, then turn on notifications.', true);
+    if(!notifSupported()) return toast('Notifications are not supported in this browser.', true);
+    Notification.requestPermission().then(async p => {
+      if(p !== 'granted'){ toast('Notifications are blocked — allow them in your phone or browser settings', true); return refresh() }
+      const ok = await savePush();
+      toast(ok ? 'Notifications are on — also when Fair Play is closed' : 'Notifications are on while Fair Play is open');
       refresh();
     });
   },
