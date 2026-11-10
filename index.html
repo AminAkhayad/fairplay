@@ -907,8 +907,16 @@ chat: () => `${topbar()}<h1>Chat</h1><p class="lead">Arrange time and place with
 board: () => {
   const s = st.stats[me()] || {}, t = st.team, sea = season();
   const results = st.matches.filter(m=>m.status==='played' || m.status==='no_show').sort((a,b)=>b.day.localeCompare(a.day));
-  const ranking = st.ranking ? st.ranking.map(id=>({t:st.teams[id], s:st.stats[id]||{}}))
+  const ranking = st.ranking ? st.ranking.filter(id => !st.stats[id]?.hidden && !(st.isAdmin && id === me()))
+      .map(id=>({t:st.teams[id], s:st.stats[id]||{}}))
       .sort((a,b)=>(b.s.rating??-1)-(a.s.rating??-1) || (b.s.played||0)-(a.s.played||0)) : null;
+  const rankingHtml = `<div class="label">Fair play ranking</div>
+    ${!ranking ? `<div class="empty">Loading…</div>` : !ranking.length ? `<div class="empty">No teams yet.</div>` : ranking.map((x,i)=>`<button class="list-row" data-act="teamPage" data-arg="${x.t.id}"><b style="width:18px;color:var(--muted)">${i+1}</b>${logo(x.t,38)}
+      <span class="grow"><b>${esc(x.t.name)}${x.t.id===me()?' (you)':''}</b><small>${stars(x.s.rating)} ${x.s.rating?(+x.s.rating).toFixed(1):'–'} · ${x.s.played||0} played</small>${badges(x.s)}</span></button>`).join('')}`;
+  // admins see the board as an outsider: their own team is not shown anywhere on it
+  if(st.isAdmin) return `${topbar()}<h1>Friendly board</h1><p class="lead">Fair play ratings and the season in ${prov(t.province).name}.</p>
+  <div class="banner"><span class="grow">You are an admin: your team is hidden from the board and the leaderboards.</span></div>
+  <div class="two"><div><div class="label">Season ${sea.label}</div>${seasonBlock()}</div><div>${rankingHtml}</div></div>`;
   return `${topbar()}<h1>Friendly board</h1><p class="lead">Results, fair play ratings and the season in ${prov(t.province).name}.</p>
   <div class="two"><div>
     <div class="label">Your team</div>
@@ -922,9 +930,7 @@ board: () => {
   </div><div>
     <div class="label">Season ${sea.label}</div>
     ${seasonBlock()}
-    <div class="label">Fair play ranking</div>
-    ${!ranking ? `<div class="empty">Loading…</div>` : ranking.map((x,i)=>`<button class="list-row" data-act="teamPage" data-arg="${x.t.id}"><b style="width:18px;color:var(--muted)">${i+1}</b>${logo(x.t,38)}
-      <span class="grow"><b>${esc(x.t.name)}${x.t.id===me()?' (you)':''}</b><small>${stars(x.s.rating)} ${x.s.rating?(+x.s.rating).toFixed(1):'–'} · ${x.s.played||0} played</small>${badges(x.s)}</span></button>`).join('')}
+    ${rankingHtml}
   </div></div>`;
 },
 };
@@ -1006,7 +1012,8 @@ function adminPage(){
 const statsGrid = s => `<div class="stats"><div class="stat"><b>${s.played||0}</b><span>Played</span></div><div class="stat"><b>${s.won||0}</b><span>Won</span></div><div class="stat"><b>${s.drawn||0}</b><span>Draw</span></div><div class="stat"><b>${s.lost||0}</b><span>Lost</span></div></div>`;
 
 function seasonBlock(){
-  const rows = st.season;
+  let scorers;
+  const rows = st.season && st.season.filter(r => !st.stats[r.team_id]?.hidden && !(st.isAdmin && r.team_id === me()));
   if(!rows) return `<div class="empty">Loading…</div>`;
   const played = rows.filter(r => r.played > 0);
   if(!played.length) return `<div class="empty">No matches played this season yet.</div>`;
@@ -1024,7 +1031,7 @@ function seasonBlock(){
           : `<div class="hint" style="margin-top:10px">${label==='Best fair play' ? 'Needs a team with 3+ ratings' : 'Nobody yet'}</div>`}</div>`).join('')}</div>
     ${mine ? `<p class="hint" style="margin-top:10px">Your season: ${mine.played} played · ${mine.won}W ${mine.drawn}D ${mine.lost}L · goals ${mine.goals_for}–${mine.goals_against}</p>` : ''}
     <div class="label">Top scorers</div>
-    ${(st.scorers||[]).length ? st.scorers.map((r,i)=>`<button class="top-scorer" style="width:100%;text-align:left" data-act="teamPage" data-arg="${r.team_id}"><span class="rank">${i+1}</span>
+    ${(scorers=(st.scorers||[]).filter(r => !st.stats[r.team_id]?.hidden && !(st.isAdmin && r.team_id === me()))).length ? scorers.map((r,i)=>`<button class="top-scorer" style="width:100%;text-align:left" data-act="teamPage" data-arg="${r.team_id}"><span class="rank">${i+1}</span>
         ${avatar({photo_url:r.photo_url, first_name:r.player_name, last_name:''},36)}
         <span class="grow"><b>${esc(r.player_name)}</b><small>${esc(r.team_name)}</small></span><span class="g">${r.goals}</span></button>`).join('')
       : `<div class="empty">No goals entered yet. Add your scorers when you enter a result.</div>`}`;
