@@ -264,6 +264,39 @@ textarea.input{height:auto;min-height:84px;padding:12px 14px;resize:vertical;lin
 .leader .who b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .leader .val{font-family:var(--cond);font-size:26px;font-weight:800;color:var(--accent);margin-top:4px}
 .section-gap{height:8px}
+.pill.fp{background:rgba(198,244,50,.15);color:var(--accent)}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media (min-width:700px){ .kpis{grid-template-columns:repeat(4,1fr)} }
+.kpi{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:12px 14px;min-width:0}
+.kpi small{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.kpi b{display:block;font-family:var(--cond);font-size:30px;font-weight:800;margin-top:4px;color:var(--text)}
+.kpi span{font-size:12px;color:var(--muted)}
+.chart{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px 14px 10px}
+.chart h3{font-size:14px;font-weight:700;margin-bottom:2px}
+.chart .sub{font-size:12px;color:var(--muted);margin-bottom:12px}
+.vbars{display:flex;align-items:flex-end;gap:2px;height:160px;border-bottom:1px solid var(--border);padding-top:18px}
+.vbar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;position:relative;min-width:0}
+.vbar i{display:block;width:70%;max-width:34px;background:var(--accent);border-radius:4px 4px 0 0;min-height:0}
+.vbar.zero i{background:var(--border);height:2px!important;border-radius:1px}
+.vbar .v{position:absolute;font-size:11px;font-weight:700;color:var(--text);transform:translateY(-16px)}
+.vbar:hover i{filter:brightness(1.15)}
+.vbar[data-tip]:hover::after,.hbar[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);font-size:12px;font-weight:600;padding:5px 8px;border-radius:6px;white-space:nowrap;z-index:5;pointer-events:none}
+.vlabels{display:flex;gap:2px;margin-top:6px}
+.vlabels span{flex:1;text-align:center;font-size:10.5px;color:var(--muted);min-width:0;overflow:hidden;white-space:nowrap}
+.hbars{display:flex;flex-direction:column;gap:8px}
+.hbar{display:grid;grid-template-columns:118px 1fr 34px;align-items:center;gap:8px;position:relative;font-size:12.5px}
+.hbar .l{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hbar .track{height:14px;background:transparent;border-radius:4px;position:relative}
+.hbar .track i{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:0 4px 4px 0}
+.hbar .n{text-align:right;font-weight:700}
+.admin-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px}
+@media (min-width:900px){ .admin-grid.two-col{grid-template-columns:1fr 1fr} }
+.atable{width:100%;border-collapse:collapse;font-size:13px}
+.atable th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:6px 8px;border-bottom:1px solid var(--border)}
+.atable td{padding:8px;border-bottom:1px solid var(--border)}
+.atable tr:last-child td{border-bottom:0}
+.atable a{color:var(--accent);text-decoration:none;font-weight:600}
+.atable td.num,.atable th.num{text-align:right;font-variant-numeric:tabular-nums}
 .scorer{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
 .scorer:last-child{border-bottom:0}
 .scorer .nm{flex:1;min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -311,6 +344,7 @@ const I = {
   minus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg>',
   logout:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg>',
   wa:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3z"/></svg>',
+  chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>',
 };
 const star = (on, big) => `<svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" fill="${on?'#C6F432':'none'}" stroke="${on?'#C6F432':'#4C6B5C'}" stroke-width="${big?1.6:2}" stroke-linejoin="round"/></svg>`;
@@ -461,7 +495,7 @@ let st;               // everything loaded from the database
 function resetState(){
   let province = null; try{ province = localStorage.getItem('fairplay.province') }catch(e){}
   st = { user:null, team:null, province, matches:[], rated:new Map(), myAvail:new Set(), monthAvail:{},
-         teams:{}, stats:{}, convos:[], thread:null, ranking:null, teamPage:null, calls:null, season:null };
+         teams:{}, stats:{}, convos:[], thread:null, ranking:null, teamPage:null, calls:null, season:null, isAdmin:false, admin:null };
 }
 resetState();
 let draft = null, res = null, cform = null, channel = null;
@@ -472,9 +506,19 @@ const otherId = m => m.challenger === me() ? m.opponent : m.challenger;
 const BOOKED = ['accepted','result_pending'];
 const myMatchOn = day => st.matches.find(m => m.day === day && BOOKED.includes(m.status));
 const pendingWith = (day, tid) => st.matches.find(m => m.day === day && m.status === 'pending' && (m.challenger === tid || m.opponent === tid));
-const incoming = () => st.matches.filter(m => m.status==='pending' && m.opponent===me() && m.day>=todayIso());
+// a pending request I still have to answer / one where I am waiting for the other team
+const needsMyAnswer = m => m.status==='pending' && (m.suggested ? m.confirmed_by !== me() : m.opponent === me());
+const waitingForThem = m => m.status==='pending' && (m.suggested ? m.confirmed_by === me() : m.challenger === me());
+const incoming = () => st.matches.filter(m => needsMyAnswer(m) && m.day>=todayIso());
 const unreadCount = () => st.convos.filter(c => c.unread).length;
-const levelOk = t => ui.level === 'all' || !st.team.level || t.level === st.team.level;
+const levelIdx = l => LEVELS.findIndex(x => x[0] === l);
+// "near" = same level, one higher or one lower
+const levelOk = t => ui.level === 'all' || !st.team.level || !t?.level || Math.abs(levelIdx(t.level) - levelIdx(st.team.level)) <= 1;
+function levelHint(t){
+  if(!st.team.level || !t?.level || t.id === me()) return '';
+  const d = levelIdx(t.level) - levelIdx(st.team.level);
+  return d === 0 ? 'Same level' : d === 1 ? '1 level higher' : d === -1 ? '1 level lower' : d > 0 ? `${d} levels higher` : `${-d} levels lower`;
+}
 function remember(...teams){ teams.flat().forEach(t => { if(t?.id) st.teams[t.id] = {...st.teams[t.id], ...t} }) }
 
 function badges(s, opts={}){
@@ -484,7 +528,7 @@ function badges(s, opts={}){
   if(s.played >= 10 && !s.no_shows && !s.late_cancels) b.push(['✓ Reliable','']);
   if(s.played >= 25) b.push(['Veteran','']);
   if(s.no_shows) b.push([`⚠ ${s.no_shows} no-show${s.no_shows>1?'s':''}`,'warn']);
-  if(opts.level) b.unshift([levelName(opts.level),'lvl']);
+  if(opts.level) b.unshift([levelName(opts.level) + (opts.hint ? ' · ' + opts.hint : ''),'lvl']);
   return b.length ? `<div class="badges ${opts.center?'center':''}">${b.map(([l,c])=>`<span class="badge ${c}">${esc(l)}</span>`).join('')}</div>` : '';
 }
 
@@ -548,6 +592,9 @@ async function loadCalls(){
 async function loadAll(){
   await Promise.all([loadMatches(), loadMonth(), loadChats(), loadStats([me()]), loadCalls()]);
 }
+async function loadAdmin(){
+  st.admin = await q(sb.rpc('admin_stats', {p_months: ui.adminMonths || 12}));
+}
 async function loadRanking(){
   const teams = await q(sb.from('teams').select(TCOLS).eq('province', st.team.province));
   remember(teams);
@@ -589,12 +636,20 @@ async function onMatch(p){
   if(after){
     const o = other(after)?.name || 'A team', mine = after.challenger === me();
     let msg = null;
-    if(p.eventType === 'INSERT' && !mine){
+    const pairedSameDay = st.matches.find(x => x.suggested && x.status === 'pending' && x.day === after.day);
+    if(p.eventType === 'INSERT' && after.suggested){
+      msg = `The team you wanted to play chose another opponent — but ${o} is also still looking for ${short(after.day)}. Fair Play paired you!`;
+      vibrate([120,60,120]);
+    }
+    else if(p.eventType === 'INSERT' && !mine){
       msg = after.call_id ? `${o} responded to your open call for ${short(after.day)}` : `${o} challenged you for ${short(after.day)}`;
       vibrate([120,60,120]);
     }
-    else if(before?.status === 'pending' && after.status === 'accepted' && mine){ celebrate(after); msg = `${o} accepted — friendly on ${short(after.day)}!` }
-    else if(before?.status === 'pending' && after.status === 'declined' && mine) msg = `${o} declined your request`;
+    else if(before?.status === 'pending' && after.status === 'pending' && after.suggested && after.confirmed_by && after.confirmed_by !== me())
+      msg = `${o} accepted the Fair Play match for ${short(after.day)} — your turn!`;
+    else if(before?.status === 'pending' && after.status === 'accepted' && (mine || after.suggested)){ celebrate(after); msg = `It's a match — friendly with ${o} on ${short(after.day)}!` }
+    else if(before?.status === 'pending' && after.status === 'declined' && pairedSameDay) msg = null;   // the pairing message says it all
+    else if(before?.status === 'pending' && after.status === 'declined' && (mine || after.suggested)) msg = `${o} declined ${after.suggested ? 'the Fair Play match' : 'your request'}`;
     else if(before && before.status !== 'cancelled' && after.status === 'cancelled' && after.cancelled_by !== me() && before.status !== 'pending') msg = `${o} cancelled the friendly on ${short(after.day)}`;
     else if(before?.status === 'accepted' && after.status === 'result_pending' && after.result_by !== me()) msg = `${o} entered the score — please confirm it`;
     else if(before?.status === 'result_pending' && after.status === 'accepted' && before.result_by === me()) msg = `${o} disputed the score you entered`;
@@ -618,6 +673,7 @@ async function route(){
       return;
     }
     await loadAll();
+    st.isAdmin = await sb.rpc('is_admin').then(r => r.data === true, () => false);
     subscribe();
     ui.screen = 'app';
   });
@@ -771,6 +827,7 @@ function nav(){
     ${item('calls',I.mega,'OPEN CALLS')}
     ${item('chat',I.chat,'CHAT', unreadCount()?'<span class="dot"></span>':'')}
     ${item('board',I.trophy,'BOARD')}
+    ${st.isAdmin ? item('admin',I.chart,'ADMIN') : ''}
     <div class="nav-foot">
       <button class="list-row" data-act="teamPage" data-arg="${t.id}">${logo(t,36)}<span class="grow"><b>${esc(t.name)}</b><small>${prov(t.province).name}</small></span></button>
       <button class="btn btn-outline btn-sm" style="width:100%" data-act="logout">${I.logout}Log out</button>
@@ -785,11 +842,12 @@ function topbar(){
 }
 const levelChips = () => st.team.level ? `<div class="chips">
   <button class="chip ${ui.level==='all'?'on':''}" data-act="levelFilter" data-arg="all">All levels</button>
-  <button class="chip ${ui.level==='mine'?'on':''}" data-act="levelFilter" data-arg="mine">My level (${esc(levelName(st.team.level))})</button></div>` : '';
+  <button class="chip ${ui.level==='mine'?'on':''}" data-act="levelFilter" data-arg="mine">Around my level (±1)</button></div>` : '';
 const byDistance = list => [...list].sort((a,b)=>(km(st.team,a) ?? 1e9) - (km(st.team,b) ?? 1e9));
 
 /* ================= tabs ================= */
 const TABS = {
+admin: () => adminPage(),
 calendar: () => {
   const first = new Date(ui.y, ui.m, 1), days = new Date(ui.y, ui.m+1, 0).getDate();
   const lead = (first.getDay()+6)%7, today = todayIso();
@@ -869,6 +927,80 @@ board: () => {
 },
 };
 
+/* ---------- admin page ---------- */
+const WEEKDAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const pct = v => v == null ? '–' : `${(+v).toFixed(0)}%`;
+function vbars(rows, label, value, unit){
+  const max = Math.max(1, ...rows.map(value));
+  const top = rows.reduce((a, r) => value(r) > value(a) ? r : a, rows[0]);
+  return `<div class="vbars" role="img" aria-label="${esc(unit)}">${rows.map(r => { const v = value(r);
+      return `<div class="vbar ${v ? '' : 'zero'}" data-tip="${esc(label(r, true))}: ${v} ${esc(unit)}">
+        ${r === top && v ? `<span class="v" style="bottom:${v / max * 100}%">${v}</span>` : ''}<i style="height:${v / max * 100}%"></i></div>` }).join('')}</div>
+    <div class="vlabels">${rows.map(r => `<span>${esc(label(r))}</span>`).join('')}</div>`;
+}
+function hbars(rows, label, value, unit){
+  if(!rows.length) return `<div class="hint">No data yet.</div>`;
+  const max = Math.max(1, ...rows.map(value));
+  return `<div class="hbars">${rows.map(r => `<div class="hbar" data-tip="${esc(label(r))}: ${value(r)} ${esc(unit)}">
+    <span class="l">${esc(label(r))}</span><span class="track"><i style="width:${value(r) / max * 100}%"></i></span><span class="n">${value(r)}</span></div>`).join('')}</div>`;
+}
+function adminPage(){
+  const a = st.admin, months = ui.adminMonths || 12;
+  if(!a) return `${topbar()}<h1>Admin</h1><div class="empty" style="margin-top:16px">Loading…</div>`;
+  const k = a.kpis;
+  const delta = k.bookings_prev ? Math.round((k.bookings_month - k.bookings_prev) / k.bookings_prev * 100) : null;
+  const monthLabel = (r, long) => { const [y, m] = r.month.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString('en-GB', long ? {month:'long', year:'numeric'} : {month:'short'}) };
+  const kpi = (label, val, sub='') => `<div class="kpi"><small>${label}</small><b>${val}</b><span>${sub}</span></div>`;
+  const table = (cols, rows) => rows.length ? `<table class="atable"><thead><tr>${cols.map(c => `<th class="${c[2]||''}">${c[0]}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(r => `<tr>${cols.map(c => `<td class="${c[2]||''}">${c[1](r)}</td>`).join('')}</tr>`).join('')}</tbody></table>` : `<div class="hint">No data yet.</div>`;
+  const STATUS = {pending:'Waiting', accepted:'Planned', declined:'Declined', cancelled:'Cancelled', result_pending:'Score pending', played:'Played', no_show:'No-show'};
+  return `${topbar()}<h1>Admin</h1>
+  <p class="lead">Overview of all teams and friendlies on Fair Play. A booking is a friendly that went ahead (planned, score pending or played).</p>
+  <div class="chips" style="margin-top:14px">${[6,12,24].map(n => `<button class="chip ${months===n?'on':''}" data-act="adminMonths" data-arg="${n}">Last ${n} months</button>`).join('')}
+    <button class="chip" data-act="adminMonths" data-arg="${months}">↻ Refresh</button></div>
+  <div class="kpis">
+    ${kpi('Bookings this month', k.bookings_month, delta == null ? 'no data for last month' : `${delta >= 0 ? '▲' : '▼'} ${Math.abs(delta)}% vs last month`)}
+    ${kpi('Upcoming friendlies', k.upcoming, `${k.bookings_total} bookings in total`)}
+    ${kpi('Teams', k.teams, `+${k.teams_new_month} this month · ${k.users} accounts`)}
+    ${kpi('Open calls', k.open_calls, `${pct(k.calls_filled_rate)} of calls found an opponent`)}
+    ${kpi('Acceptance rate', pct(k.accept_rate), 'of answered requests')}
+    ${kpi('No-show rate', pct(k.no_show_rate), 'of matches that should have been played')}
+    ${kpi('Late cancellations', pct(k.cancel_rate), 'of planned friendlies')}
+    ${kpi('Fair Play matches', `${k.suggested_accepted}/${k.suggested_matches}`, 'left-over teams paired · accepted')}
+  </div>
+  <div class="admin-grid">
+    <div class="chart"><h3>Bookings per month</h3><div class="sub">Friendlies per month, by match day</div>
+      ${vbars(a.per_month, monthLabel, r => r.bookings, 'bookings')}</div>
+  </div>
+  <div class="admin-grid two-col">
+    <div class="chart"><h3>Busiest days</h3><div class="sub">Bookings per weekday · last ${months} months</div>
+      ${vbars(a.per_weekday, (r, long) => long ? ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][r.dow-1] : WEEKDAYS[r.dow-1], r => r.bookings, 'bookings')}</div>
+    <div class="chart"><h3>Popular kick-off times</h3><div class="sub">Bookings per hour · only when a time was entered</div>
+      ${a.per_hour.length ? vbars(a.per_hour, r => `${r.hour}:00`, r => r.bookings, 'bookings') : '<div class="hint">No kick-off times entered yet.</div>'}</div>
+  </div>
+  <div class="admin-grid two-col">
+    <div class="chart"><h3>Popular halls</h3><div class="sub">Top 10 by bookings · last ${months} months${k.bookings_no_hall ? ` · ${k.bookings_no_hall} bookings without a hall` : ''}</div>
+      ${table([['#', r => a.halls.indexOf(r) + 1], ['Hall', r => mapsLink(r.hall)], ['Bookings', r => r.bookings, 'num'], ['Teams', r => r.teams, 'num']], a.halls)}</div>
+    <div class="chart"><h3>Most active teams</h3><div class="sub">Top 10 by bookings · last ${months} months</div>
+      ${table([['#', r => a.top_teams.indexOf(r) + 1], ['Team', r => esc(r.name)], ['Province', r => prov(r.province).name], ['Bookings', r => r.bookings, 'num']], a.top_teams)}</div>
+  </div>
+  <div class="admin-grid two-col">
+    <div class="chart"><h3>Per province</h3><div class="sub">Bookings · last ${months} months</div>
+      ${hbars(a.per_province, r => prov(r.province).name, r => r.bookings, 'bookings')}
+      <p class="hint" style="margin-top:10px">${a.per_province.map(r => `${prov(r.province).name}: ${r.teams} team${r.teams===1?'':'s'}`).join(' · ')}</p></div>
+    <div class="chart"><h3>Per level</h3><div class="sub">Bookings · last ${months} months</div>
+      ${hbars(a.per_level, r => levelName(r.level) || 'Unknown', r => r.bookings, 'bookings')}
+      <p class="hint" style="margin-top:10px">${a.per_level.map(r => `${levelName(r.level) || 'Unknown'}: ${r.teams}`).join(' · ')}</p></div>
+  </div>
+  <div class="admin-grid">
+    <div class="chart"><h3>New teams per month</h3><div class="sub">Teams that signed up</div>
+      ${vbars(a.per_month, monthLabel, r => r.new_teams, 'new teams')}</div>
+    <div class="chart"><h3>Recent activity</h3><div class="sub">Latest 12 requests and friendlies</div>
+      ${table([['Created', r => new Date(r.created_at).toLocaleDateString('en-GB', {day:'numeric', month:'short'})], ['Match', r => `${esc(r.challenger)} – ${esc(r.opponent)}${r.suggested ? ' <span class="badge">⚡</span>' : ''}`],
+               ['Match day', r => short(r.day)], ['Status', r => STATUS[r.status] || r.status]], a.recent)}</div>
+  </div>`;
+}
+
 const statsGrid = s => `<div class="stats"><div class="stat"><b>${s.played||0}</b><span>Played</span></div><div class="stat"><b>${s.won||0}</b><span>Won</span></div><div class="stat"><b>${s.drawn||0}</b><span>Draw</span></div><div class="stat"><b>${s.lost||0}</b><span>Lost</span></div></div>`;
 
 function seasonBlock(){
@@ -906,7 +1038,7 @@ function notifBanner(){
 function friendlies(){
   const today = todayIso();
   const inc = incoming();
-  const outgoing = st.matches.filter(m=>m.status==='pending' && m.challenger===me() && m.day>=today);
+  const outgoing = st.matches.filter(m=>waitingForThem(m) && m.day>=today);
   const planned  = st.matches.filter(m=>BOOKED.includes(m.status));
   return `${inc.length?`<div class="label">Requests for you</div>${inc.map(matchRow).join('')}`:''}
     <div class="label">Your friendlies</div>
@@ -924,9 +1056,12 @@ function matchRow(m){
   let acts = '';
   const chat = `<button class="btn btn-outline btn-sm" data-act="chat" data-arg="${o.id}">Chat</button>`;
   const edit = `<button class="btn btn-outline btn-sm" data-act="editDetails" data-arg="${m.id}">Edit time & place</button>`;
-  if(m.status==='pending' && m.opponent===me())
+  if(needsMyAnswer(m))
     acts = `<button class="btn btn-primary btn-sm" data-act="respond" data-arg="${m.id}|1">Accept</button>
             <button class="btn btn-outline btn-sm" data-act="respond" data-arg="${m.id}|0">Decline</button>${chat}`;
+  else if(m.status==='pending' && m.suggested)
+    acts = `<span class="pill wait">You accepted · waiting for ${esc(o.name)}</span>${chat}
+            <button class="btn btn-danger btn-sm" data-act="respond" data-arg="${m.id}|0">Decline</button>`;
   else if(m.status==='pending')
     acts = `<span class="pill wait">Waiting</span>${chat}${edit}
             <button class="btn btn-danger btn-sm" data-act="cancelMatch" data-arg="${m.id}">Withdraw</button>`;
@@ -942,7 +1077,9 @@ function matchRow(m){
   const score = m.status==='result_pending' ? (() => { const [a,b] = myScore(m); return `<span class="pill">${a} – ${b}</span>` })() : '';
   return `<div class="list-row" style="display:block"><div style="display:flex;gap:12px;align-items:center">
     <button data-act="teamPage" data-arg="${o.id}" style="flex:none">${logo(o,40)}</button>
-    <span class="grow"><b>${esc(o.name)}</b><small>${nice(m.day)}${m.call_id?' · open call':''}</small></span>${score}</div>
+    <span class="grow"><b>${esc(o.name)}</b><small>${nice(m.day)}${m.call_id?' · open call':''}</small>
+      ${m.suggested && m.status==='pending' ? `<div class="badges"><span class="badge">⚡ Fair Play match</span></div>` : ''}</span>${score}</div>
+    ${m.suggested && m.status==='pending' ? `<p class="hint">You both wanted to play the same team that day, but it chose another opponent. You are both still free — play each other! Both teams need to accept.</p>` : ''}
     ${matchMeta(m)}
     <div class="row-actions">${acts}</div></div>`;
 }
@@ -968,7 +1105,7 @@ function callCard(c){
   return `<div class="list-row" style="display:block">
     <div style="display:flex;gap:12px;align-items:center">
       <button data-act="teamPage" data-arg="${t.id}" style="flex:none">${logo(t,44)}</button>
-      <span class="grow"><b>${esc(t.name)}</b><small>${nice(c.day)}${c.kickoff?' · '+hhmm(c.kickoff):''}${dist?' · '+dist:''}</small>${mine?'':badges(s,{level:t.level})}</span></div>
+      <span class="grow"><b>${esc(t.name)}</b><small>${nice(c.day)}${c.kickoff?' · '+hhmm(c.kickoff):''}${dist?' · '+dist:''}</small>${mine?'':badges(s,{level:t.level, hint:levelHint(t)})}</span></div>
     <div class="meta"><span>${c.has_hall ? 'Hall available' : 'Looking for a team with a hall'}</span>
       ${c.venue ? `<span>${I.pin.replace('<svg','<svg style="width:13px;height:13px;vertical-align:-2px"')} ${mapsLink(c.venue)}</span>` : ''}</div>
     ${c.note ? `<div class="note">${esc(c.note)}</div>` : ''}
@@ -1016,8 +1153,8 @@ day: ({date}) => {
         : `<button class="btn btn-primary btn-sm" data-act="respond" data-arg="${p.id}|1">Accept</button>`;
       return `<div class="list-row">
       <button data-act="teamPage" data-arg="${t.id}" style="display:flex;gap:12px;align-items:center;flex:1;min-width:0;text-align:left">${logo(t,42)}
-        <span class="grow"><b>${esc(t.name)}</b><small>${stars(s.rating)} ${s.rating?(+s.rating).toFixed(1):'No ratings yet'}${d?' · '+d:''}</small>${badges(s,{level:t.level})}</span></button>${btn}
-    </div>`}).join('') : `<div class="empty">No ${ui.level==='mine'?'teams of your level':'other teams'} placed on this day yet. Place your team so others can find you.</div>`}`}
+        <span class="grow"><b>${esc(t.name)}</b><small>${stars(s.rating)} ${s.rating?(+s.rating).toFixed(1):'No ratings yet'}${d?' · '+d:''}</small>${badges(s,{level:t.level, hint:levelHint(t)})}</span></button>${btn}
+    </div>`}).join('') : `<div class="empty">No ${ui.level==='mine'?'teams around your level':'other teams'} placed on this day yet. Place your team so others can find you.</div>`}`}
   </div>`;
 },
 
@@ -1063,7 +1200,7 @@ team: ({id}) => {
       <h1 style="margin-top:12px">${esc(t.name)}</h1>
       <p class="lead">${prov(t.province).name}${d?' · '+d+' away':''}</p>
       <div style="margin-top:8px">${stars(s.rating)} <small style="color:var(--muted)">${s.rating?(+s.rating).toFixed(1)+' fair play · '+s.rating_count+' rating'+(s.rating_count===1?'':'s'):'No ratings yet'}</small></div>
-      ${badges(s,{level:t.level, center:true})}
+      ${badges(s,{level:t.level, center:true, hint:levelHint(t)})}
       ${t.hall_address ? `<div class="meta" style="justify-content:center">${I.pin.replace('<svg','<svg style="width:13px;height:13px;vertical-align:-2px"')} ${mapsLink(t.hall_address)}</div>` : ''}</div>
     ${statsGrid(s)}
     <div class="label">Players</div>
@@ -1172,9 +1309,11 @@ const A = {
     ui.tab=t; ui.screen='app'; ui.sheet=null; window.scrollTo(0,0); render();
     if(t==='board') run(async()=>{ await Promise.all([loadRanking(), loadStats([me()]), loadMatches()]); refresh() });
     if(t==='chat') run(async()=>{ await loadChats(); refresh() });
+    if(t==='admin') run(async()=>{ await loadAdmin(); refresh() });
     if(t==='calls') run(async()=>{ await Promise.all([loadCalls(), loadMatches()]); refresh() });
   },
   levelFilter(v){ ui.level = v; refresh() },
+  adminMonths(v){ ui.adminMonths = +v; run(async()=>{ await loadAdmin(); refresh() }) },
   logout(){ run(async()=>{
     if(channel){ sb.removeChannel(channel); channel=null }
     st.user = null;
@@ -1268,7 +1407,9 @@ const A = {
     await q(sb.rpc('respond', {p_match:mid, p_accept: yes==='1'}));
     await Promise.all([loadMatches(), loadMonth(), loadCalls()]);
     const m = st.matches.find(x=>x.id===mid);
-    if(yes==='1' && m){ ui.sheet=null; refresh(); celebrate(m) } else { toast('Request declined'); refresh() }
+    if(yes==='1' && m?.status==='accepted'){ ui.sheet=null; refresh(); celebrate(m) }
+    else if(yes==='1'){ refresh(); toast(`Accepted — waiting for ${other(m).name} to accept too`) }
+    else { toast('Request declined'); refresh() }
   })},
   cancelMatch(mid){
     const m = st.matches.find(x=>x.id===mid), o = other(m);
@@ -1414,7 +1555,10 @@ const A = {
   },
 };
 
+const celebrated = new Set();
 function celebrate(m){
+  if(celebrated.has(m.id)) return;
+  celebrated.add(m.id);
   const o = other(m), t = st.team;
   const el = document.createElement('div'); el.className='match-pop';
   el.innerHTML = `<h1>IT'S A MATCH!</h1><div class="vs">${logo(t,84)}<em>VS</em>${logo(o,84)}</div>

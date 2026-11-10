@@ -82,6 +82,9 @@ alter table public.matches add column if not exists host uuid references public.
 alter table public.matches add column if not exists call_id uuid references public.calls(id) on delete set null;
 alter table public.matches add column if not exists no_show uuid references public.teams(id) on delete set null;
 alter table public.matches add column if not exists cancelled_by uuid references public.teams(id) on delete set null;
+-- suggested = Fair Play paired two left-over teams; both must accept (confirmed_by = first one that did)
+alter table public.matches add column if not exists suggested boolean not null default false;
+alter table public.matches add column if not exists confirmed_by uuid references public.teams(id) on delete set null;
 alter table public.matches drop constraint if exists matches_status_check;
 alter table public.matches add constraint matches_status_check check (status in
   ('pending','accepted','declined','cancelled','result_pending','played','no_show'));
@@ -126,6 +129,14 @@ create table if not exists public.goals (
 );
 create index if not exists goals_team on public.goals (team_id);
 create index if not exists goals_match on public.goals (match_id);
+
+-- Platform admins (see the admin page). Add yourself once in the SQL editor:
+--   insert into public.admins (user_id) select id from auth.users where email = 'you@example.com';
+create table if not exists public.admins (
+  user_id     uuid primary key references auth.users(id) on delete cascade,
+  created_at  timestamptz not null default now()
+);
+alter table public.admins enable row level security;   -- no policies: only readable through is_admin()
 
 -- ---------- helper ----------------------------------------------------
 
@@ -327,12 +338,20 @@ begin
 end $$;
 
 -- Accept or decline a challenge you received.
+-- For a suggested match (two left-over teams paired by Fair Play) both teams must accept.
+-- When a team accepts one of several requests for a day, the teams it did not choose
+-- are paired with each other, two by two, as a suggested match.
 create or replace function public.respond(p_match uuid, p_accept boolean) returns void
 language plpgsql security definer set search_path = public as $$
-declare me uuid := public.my_team(); m matches;
+declare me uuid := public.my_team(); m matches; leftover uuid[]; a uuid; b uuid; i int := 1;
 begin
   select * into m from matches where id = p_match for update;
-  if m.id is null or m.opponent is distinct from me then raise exception 'Request not found'; end if;
+  if m.id is null then raise exception 'Request not found'; end if;
+  if m.suggested then
+    if me is null or me not in (m.challenger, m.opponent) then raise exception 'Request not found'; end if;
+  elsif m.opponent is distinct from me then
+    raise exception 'Request not found';
+  end if;
   if m.status <> 'pending' then raise exception 'This request was already answered or withdrawn'; end if;
   if not p_accept then
     update matches set status = 'declined' where id = p_match;
@@ -342,7 +361,19 @@ begin
   if public.booked(m.challenger, m.opponent, m.day) then
     raise exception 'One of the teams already has a friendly on this day';
   end if;
+  if m.suggested and (m.confirmed_by is null or m.confirmed_by = me) then
+    update matches set confirmed_by = me where id = p_match;   -- wait for the other team
+    return;
+  end if;
   update matches set status = 'accepted' where id = p_match;
+
+  -- teams that also wanted to play one of these two teams that day, in order of asking
+  select array_agg(x.challenger order by x.first_at) into leftover
+  from (select challenger, min(created_at) as first_at from matches
+        where day = m.day and status = 'pending' and id <> p_match and not suggested
+          and opponent in (m.challenger, m.opponent) and challenger not in (m.challenger, m.opponent)
+        group by challenger) x;
+
   -- both teams are now booked: close their other open requests, calls and day placements
   update matches set status = 'declined'
     where day = m.day and status = 'pending' and id <> p_match
@@ -350,6 +381,19 @@ begin
   update calls set status = 'closed'
     where day = m.day and status = 'open' and team_id in (m.challenger, m.opponent);
   delete from availability where day = m.day and team_id in (m.challenger, m.opponent);
+
+  -- pair the left-over teams with each other
+  while leftover is not null and i < array_length(leftover, 1) loop
+    a := leftover[i]; b := leftover[i + 1];
+    if not public.booked(a, b, m.day)
+       and not exists (select 1 from matches where day = m.day and status = 'pending'
+                       and ((challenger = a and opponent = b) or (challenger = b and opponent = a))) then
+      insert into matches (day, challenger, opponent, kickoff, suggested) values (m.day, a, b, m.kickoff, true);
+      i := i + 2;
+    else
+      i := i + 1;
+    end if;
+  end loop;
 end $$;
 
 -- Change time / place / host of a request or planned friendly (either team).
@@ -372,7 +416,7 @@ declare me uuid := public.my_team(); m matches;
 begin
   select * into m from matches where id = p_match for update;
   if m.id is null or me not in (m.challenger, m.opponent) then raise exception 'Match not found'; end if;
-  if m.status = 'pending' and m.challenger <> me then raise exception 'Decline the request instead'; end if;
+  if m.status = 'pending' and m.challenger <> me and not m.suggested then raise exception 'Decline the request instead'; end if;
   if m.status not in ('pending','accepted') then raise exception 'This match can no longer be cancelled'; end if;
   update matches set status = 'cancelled',
     cancelled_by = case when m.status = 'accepted' then me end   -- withdrawing a request does not count
@@ -488,6 +532,83 @@ language sql stable security definer set search_path = public as $$
   limit least(greatest(p_limit, 1), 50)
 $$;
 
+-- ---------- admin ----------------------------------------------------
+
+create or replace function public.is_admin() returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.admins where user_id = auth.uid())
+$$;
+
+-- Overview for the admin page. "Bookings" = friendlies that went ahead
+-- (accepted, score pending or played), counted on the match day.
+create or replace function public.admin_stats(p_months int default 12) returns jsonb
+language plpgsql stable security definer set search_path = public, auth as $$
+declare
+  months int := least(greatest(coalesce(p_months, 12), 1), 36);
+  first_month date := (date_trunc('month', current_date) - make_interval(months => months - 1))::date;
+  r jsonb;
+begin
+  if not public.is_admin() then raise exception 'Admins only'; end if;
+  with b as (
+    select m.*, coalesce(nullif(btrim(m.venue), ''), h.hall_address) as hall
+    from matches m left join teams h on h.id = m.host
+    where m.status in ('accepted', 'result_pending', 'played')
+  ), bp as (select * from b where day >= first_month)
+  select jsonb_build_object(
+    'kpis', jsonb_build_object(
+      'users',            (select count(*) from auth.users),
+      'teams',            (select count(*) from teams),
+      'teams_new_month',  (select count(*) from teams where created_at >= date_trunc('month', now())),
+      'bookings_total',   (select count(*) from b),
+      'bookings_month',   (select count(*) from b where date_trunc('month', day) = date_trunc('month', current_date)),
+      'bookings_prev',    (select count(*) from b where date_trunc('month', day) = date_trunc('month', current_date) - interval '1 month'),
+      'upcoming',         (select count(*) from b where day >= current_date),
+      'accept_rate',      (select round(100.0 * count(*) filter (where status in ('accepted','result_pending','played','no_show'))
+                                   / nullif(count(*) filter (where status in ('accepted','result_pending','played','no_show','declined')), 0), 1) from matches),
+      'no_show_rate',     (select round(100.0 * count(*) filter (where status = 'no_show')
+                                   / nullif(count(*) filter (where status in ('played','no_show')), 0), 1) from matches),
+      'cancel_rate',      (select round(100.0 * count(*) filter (where status = 'cancelled' and cancelled_by is not null)
+                                   / nullif(count(*) filter (where status in ('accepted','result_pending','played','no_show')
+                                                            or (status = 'cancelled' and cancelled_by is not null)), 0), 1) from matches),
+      'open_calls',       (select count(*) from calls where status = 'open' and day >= current_date),
+      'calls_filled_rate',(select round(100.0 * count(*) filter (where status = 'closed')
+                                   / nullif(count(*) filter (where status = 'closed' or (status <> 'open') or day < current_date), 0), 1) from calls),
+      'suggested_matches',(select count(*) from matches where suggested),
+      'suggested_accepted',(select count(*) from matches where suggested and status in ('accepted','result_pending','played')),
+      'bookings_no_hall', (select count(*) from bp where hall is null)
+    ),
+    'per_month', (select jsonb_agg(jsonb_build_object(
+                    'month', to_char(mo, 'YYYY-MM'),
+                    'bookings', (select count(*) from b where date_trunc('month', b.day) = mo),
+                    'new_teams', (select count(*) from teams t where date_trunc('month', t.created_at) = mo)) order by mo)
+                  from generate_series(first_month::timestamp, date_trunc('month', current_date)::timestamp, interval '1 month') mo),
+    'per_weekday', (select jsonb_agg(jsonb_build_object('dow', d, 'bookings',
+                      (select count(*) from bp where extract(isodow from bp.day) = d)) order by d)
+                    from generate_series(1, 7) d),
+    'per_hour', (select coalesce(jsonb_agg(jsonb_build_object('hour', h, 'bookings', n) order by h), '[]'::jsonb)
+                 from (select extract(hour from kickoff)::int h, count(*) n from bp where kickoff is not null group by 1) x),
+    'halls', (select coalesce(jsonb_agg(jsonb_build_object('hall', name, 'bookings', n, 'teams', tm) order by n desc, name), '[]'::jsonb)
+              from (select min(hall) name, count(*) n,
+                           (select count(distinct t) from unnest(array_agg(challenger) || array_agg(opponent)) t) tm
+                    from bp where hall is not null group by lower(btrim(hall)) order by count(*) desc limit 10) x),
+    'per_province', (select jsonb_agg(jsonb_build_object('province', p, 'teams', tc, 'bookings', bc) order by bc desc, tc desc)
+                     from (select t.province p, count(distinct t.id) tc, count(distinct bp.id) bc
+                           from teams t left join bp on t.id in (bp.challenger, bp.opponent) group by 1) x),
+    'per_level', (select jsonb_agg(jsonb_build_object('level', l, 'teams', tc, 'bookings', bc) order by bc desc, tc desc)
+                  from (select coalesce(t.level, 'unknown') l, count(distinct t.id) tc, count(distinct bp.id) bc
+                        from teams t left join bp on t.id in (bp.challenger, bp.opponent) group by 1) x),
+    'top_teams', (select coalesce(jsonb_agg(jsonb_build_object('name', name, 'province', province, 'bookings', n) order by n desc, name), '[]'::jsonb)
+                  from (select t.name, t.province, count(*) n from bp join teams t on t.id in (bp.challenger, bp.opponent)
+                        group by t.id, t.name, t.province order by n desc limit 10) x),
+    'recent', (select coalesce(jsonb_agg(jsonb_build_object('day', day, 'status', status, 'suggested', suggested,
+                       'challenger', c, 'opponent', o, 'created_at', created_at) order by created_at desc), '[]'::jsonb)
+               from (select m.day, m.status, m.suggested, m.created_at, tc.name c, tor.name o
+                     from matches m join teams tc on tc.id = m.challenger join teams tor on tor.id = m.opponent
+                     order by m.created_at desc limit 12) x)
+  ) into r;
+  return r;
+end $$;
+
 -- Mark the messages another team sent you as read.
 create or replace function public.mark_read(p_from uuid) returns void
 language sql security definer set search_path = public as $$
@@ -521,7 +642,9 @@ begin
     'public.delete_my_account()',
     'public.season_stats(text, date, date)',
     'public.set_scorers(uuid, jsonb)',
-    'public.season_scorers(text, date, date, int)']
+    'public.season_scorers(text, date, date, int)',
+    'public.is_admin()',
+    'public.admin_stats(int)']
   loop
     execute format('revoke execute on function %s from public, anon', f);
     execute format('grant execute on function %s to authenticated', f);

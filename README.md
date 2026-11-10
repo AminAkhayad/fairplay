@@ -25,6 +25,13 @@ Futsal matchmaking: when your official opponent forfeits, find another team in y
 - Security is enforced in the database (Row Level Security): you can only edit your own team, only read
   your own chats, and matches can only change through the functions in `schema.sql`.
 
+- **Level ±1**: "Around my level" shows teams of the same level and one level higher or lower.
+- **Fair Play matches**: when a team picks one of several teams that asked to play it on a day, the teams
+  that were not chosen are paired with each other (both must accept).
+- **Admin page** (platform admins only): bookings per month, busiest days and kick-off times, popular halls,
+  provinces, levels, most active teams and key rates. Make yourself admin once in the SQL editor:
+  `insert into public.admins (user_id) select id from auth.users where email = 'you@example.com';`
+
 ## Setup (one time, ~10 minutes)
 
 1. Create a free account and a new project at <https://supabase.com> (region: West EU / Frankfurt or Paris).
