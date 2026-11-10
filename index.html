@@ -25,7 +25,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{background:var(--bg);color:var(--text);font-family:var(--body);-webkit-font-smoothing:antialiased}
 body{min-height:100dvh}
-button,input{font:inherit;color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;border:0;background:none}
 img{display:block}
 .hidden{display:none!important}
@@ -241,7 +241,9 @@ h1{font-family:var(--body);font-weight:700;font-size:28px;line-height:1.15;lette
 .setup code{background:var(--surface2);color:var(--text);padding:2px 6px;border-radius:6px;font-size:13px}
 .link{color:var(--accent);font-weight:600;font-size:14px;text-decoration:none;background:none;padding:0}
 .link-row{margin-top:12px;text-align:right}
-select.input{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 18px) 21px,calc(100% - 13px) 21px;background-size:5px 5px;background-repeat:no-repeat;padding-right:34px}
+select.input{color-scheme:dark;font-family:var(--body);font-size:15px;font-weight:500;color:var(--text);cursor:pointer;appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 18px) 21px,calc(100% - 13px) 21px;background-size:5px 5px;background-repeat:no-repeat;padding-right:34px}
+select.input:invalid,select.input option[value=""]{color:#6B8577}
+select.input option{background:var(--surface);color:var(--text);font-family:var(--body);font-size:15px}
 textarea.input{height:auto;min-height:84px;padding:12px 14px;resize:vertical;line-height:1.4}
 .hint{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.4}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 12px}
@@ -599,7 +601,7 @@ async function loadRanking(){
   const teams = await q(sb.from('teams').select(TCOLS).eq('province', st.team.province));
   remember(teams);
   await loadStats(teams.map(t => t.id));
-  st.ranking = teams.map(t => t.id);
+  st.ranking = teams.map(t => t.id).filter(id => !st.stats[id]?.hidden);   // admin teams stay off the leaderboards
   const s = season();
   [st.season, st.scorers] = await Promise.all([
     q(sb.rpc('season_stats', {p_province: st.team.province, p_from: s.from, p_to: s.to})),
@@ -789,7 +791,7 @@ team: () => {
       <input class="input" id="tname" placeholder="Enter your team name" value="${esc(draft.name)}" data-draft="name" maxlength="40">
       <div class="msg">Enter your team name</div></div>
     <div class="field" id="f-level" style="margin-top:0"><div class="label">Level *</div>
-      <select class="input" id="level" data-draft="level">
+      <select class="input" id="level" data-draft="level" required>
         <option value="">Choose your level</option>
         ${LEVELS.map(([v,l])=>`<option value="${v}" ${draft.level===v?'selected':''}>${l}</option>`).join('')}
       </select><div class="msg">Choose your level</div></div>

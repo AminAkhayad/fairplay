@@ -166,6 +166,13 @@ create table if not exists public.admins (
 );
 alter table public.admins enable row level security;
 
+-- Teams of admin accounts are hidden from the public leaderboards.
+create or replace function public.owner_is_admin(p_owner uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.profiles where id = p_owner and is_admin = 1)
+      or exists (select 1 from public.admins where user_id = p_owner)
+$$;
+
 -- ---------- helper ----------------------------------------------------
 
 -- The team owned by the logged-in user (null when they have none yet).
@@ -192,7 +199,8 @@ select
   count(m.id) filter (where m.status = 'no_show' and m.no_show = t.id)::int as no_shows,
   count(m.id) filter (where m.status = 'cancelled' and m.cancelled_by = t.id)::int as late_cancels,
   (select round(avg(r.stars)::numeric, 2) from public.ratings r where r.rated = t.id) as rating,
-  (select count(*)::int from public.ratings r where r.rated = t.id) as rating_count
+  (select count(*)::int from public.ratings r where r.rated = t.id) as rating_count,
+  public.owner_is_admin(t.owner) as hidden
 from public.teams t
 left join public.matches m on t.id in (m.challenger, m.opponent)
 group by t.id;
@@ -220,7 +228,7 @@ language sql stable security definer set search_path = public as $$
   from teams t
   left join matches m on m.status = 'played' and t.id in (m.challenger, m.opponent)
                      and m.day between p_from and p_to
-  where t.province = p_province and auth.uid() is not null
+  where t.province = p_province and auth.uid() is not null and not public.owner_is_admin(t.owner)
   group by t.id
 $$;
 
@@ -552,7 +560,7 @@ language sql stable security definer set search_path = public as $$
          t.id, t.name, t.logo_url, sum(g.goals)::int
   from goals g
   join matches m on m.id = g.match_id and m.status = 'played' and m.day between p_from and p_to
-  join teams t on t.id = g.team_id and t.province = p_province
+  join teams t on t.id = g.team_id and t.province = p_province and not public.owner_is_admin(t.owner)
   left join players pl on pl.id = g.player_id
   where auth.uid() is not null
   group by g.player_id, coalesce(pl.first_name || ' ' || pl.last_name, g.player_name), pl.photo_url, t.id, t.name, t.logo_url
